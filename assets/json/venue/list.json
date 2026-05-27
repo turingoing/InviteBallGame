@@ -1,0 +1,44 @@
+[
+    {
+        "avatarUrl": "https://picsum.photos/200/200?random=1",
+        "name": "陈一鸣",
+        "levelTag": "红桃♡10",
+        "tagColor": "#FF3B30",
+        "score": 4.9,
+        "location": "星霸台球俱乐部(南京东路店)",
+        "time": "今天 19:30 - 21:30",
+        "lackCount": 2,
+        "joinedCount": 2,
+        "totalCount": 4,
+        "feeType": "AA制",
+        "roomNo": "1024"
+    },
+    {
+        "avatarUrl": "https://picsum.photos/200/200?random=2",
+        "name": "林小汐",
+        "levelTag": "黑桃♤8",
+        "tagColor": "#5856D6",
+        "score": 5.0,
+        "location": "绅士桌球汇(徐家汇店)",
+        "time": "明天 14:00 - 16:00",
+        "lackCount": 1,
+        "joinedCount": 1,
+        "totalCount": 2,
+        "feeType": "败方付",
+        "roomNo": "2066"
+    },
+    {
+        "avatarUrl": "https://picsum.photos/200/200?random=3",
+        "name": "王建国",
+        "levelTag": "草花♧2",
+        "tagColor": "#34C759",
+        "score": 4.7,
+        "location": "乔氏台球金典(静安店)",
+        "time": "05-24 20:00 - 22:00",
+        "lackCount": 3,
+        "joinedCount": 1,
+        "totalCount": 4,
+        "feeType": "我请客",
+        "roomNo": "3088"
+    }
+]

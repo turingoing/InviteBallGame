@@ -1,0 +1,42 @@
+[
+  {
+    "icon": "check_circle",
+    "bgColor": "FFE8E5FF",
+    "title": "约球报名成功",
+    "content": "您的库诺克进阶赛报名已通过，请准时参加",
+    "time": "10:30",
+    "hasBadge": true
+  },
+  {
+    "icon": "notifications_active",
+    "bgColor": "FFFFEFD8",
+    "title": "系统维护公告",
+    "content": "为了提供更好的服务，我们将于凌晨2点进行系统升...",
+    "time": "昨天",
+    "hasBadge": false
+  },
+  {
+    "icon": "thumb_up",
+    "bgColor": "FFE5F0FF",
+    "title": "新增互动提醒",
+    "content": "\"桌球达人\"赞了你的动态：今天手感不错！",
+    "time": "昨天",
+    "hasBadge": true
+  },
+  {
+    "icon": "chat",
+    "bgColor": "FFD9F7E9",
+    "title": "客服反馈回复",
+    "content": "您好，关于您反馈的场馆预订问题，我们已经处理完...",
+    "time": "星期三",
+    "hasBadge": false
+  },
+  {
+    "icon": "emoji_events",
+    "bgColor": "FFF5F5F7",
+    "title": "赛季结算通知",
+    "content": "恭喜！您在S4赛季中获得了\"精英段位\"的称号...",
+    "time": "10-24",
+    "hasBadge": false
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "title": "斯诺克·竞技赛",
+    "activityName": "上海大师赛民间预选赛",
+    "date": "2023-11-25 14:00 (周六)",
+    "location": "乔氏台球俱乐部(徐汇店)",
+    "isUsed": false,
+    "participantCount": 3,
+    "totalCount": 4,
+    "depositReturned": false
+  },
+  {
+    "title": "美式八球·休闲",
+    "activityName": "下班后的快乐杆",
+    "date": "2023-11-20 19:30 (周一)",
+    "location": "叮叮台球(长宁店)",
+    "isUsed": true,
+    "participantCount": null,
+    "totalCount": null,
+    "depositReturned": true
+  }
+]

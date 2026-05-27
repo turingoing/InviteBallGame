@@ -1,0 +1,41 @@
+[
+  {
+    "imageUrl": "assets/images/zb/Rectangle 41.png",
+    "name": "奥体中心羽毛球综合馆",
+    "score": 4.8,
+    "tags": ["五星商家", "有助教"],
+    "address": "朝阳区安定路1号奥体公园内",
+    "distance": "1.2km",
+    "status": "营业中",
+    "promotion": "到点即可领取可乐一瓶",
+    "buttonText": "去约球",
+    "buttonEnabled": true,
+    "businessHours": null
+  },
+  {
+    "imageUrl": "assets/images/zb/Rectangle 41(1).png",
+    "name": "奥体中心羽毛球综合馆",
+    "score": 4.8,
+    "tags": [],
+    "address": "朝阳区广顺北大街33号福码大厦B1",
+    "distance": "2.8km",
+    "status": "休息中",
+    "promotion": "",
+    "buttonText": "明日约",
+    "buttonEnabled": false,
+    "businessHours": "10:00-21:00"
+  },
+  {
+    "imageUrl": "assets/images/zb/Rectangle 41.png",
+    "name": "奥体中心羽毛球综合馆",
+    "score": 5.0,
+    "tags": ["五星商家", "有助教"],
+    "address": "朝阳区安定路1号奥体公园内",
+    "distance": "1.2km",
+    "status": "营业中",
+    "promotion": "到点即可领取可乐一瓶",
+    "buttonText": "去约球",
+    "buttonEnabled": true,
+    "businessHours": null
+  }
+]

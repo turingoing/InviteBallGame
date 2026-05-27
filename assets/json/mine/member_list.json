@@ -1,0 +1,35 @@
+[
+    {
+        "title": "线下会员聚餐·交流会",
+        "time": "12月15日",
+        "address": "上海·瑞吉斯俱乐部",
+        "status": "报名中",
+        "statusColor": "FFFF7D00",
+        "imageUrl": "https://picsum.photos/seed/dog1/400/220",
+        "isSmallCard": false,
+        "desc": "",
+        "joinCount": ""
+    },
+    {
+        "title": "2024\"黑金杯\"线下公开赛",
+        "time": "11月25日",
+        "address": "上海·瑞吉斯俱乐部",
+        "status": "进行中",
+        "statusColor": "FF2563EB",
+        "imageUrl": "https://picsum.photos/seed/plant1/400/220",
+        "isSmallCard": false,
+        "desc": "",
+        "joinCount": ""
+    },
+    {
+        "title": "顶级教练：线下动作纠偏沙龙",
+        "time": "",
+        "address": "",
+        "status": "限额报名",
+        "statusColor": "FF2563EB",
+        "imageUrl": "https://picsum.photos/seed/plant2/120/80",
+        "isSmallCard": true,
+        "desc": "仅限黑金会员 20人",
+        "joinCount": "已有15人参加"
+    }
+]

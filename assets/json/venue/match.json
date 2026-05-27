@@ -1,0 +1,16 @@
+[
+  {
+    "avatarUrl": "https://picsum.photos/200/200?random=1",
+    "userName": "斯诺克小白",
+    "rating": 5,
+    "time": "昨天 22:15",
+    "content": "王先生人非常客气，球技是真的好，特别是走位，受教了！星爵这家的台子也维护得不错。"
+  },
+  {
+    "avatarUrl": "https://picsum.photos/200/200?random=2",
+    "userName": "阿杰",
+    "rating": 4,
+    "time": "05-20",
+    "content": "很愉快的周末。大家都很准时，球场氛围很好，适合切磋交流。"
+  }
+]
