@@ -63,7 +63,7 @@ class VenueCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(venueData.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    if (venueData.tags.isNotEmpty) const Icon(Icons.verified, color: Colors.blue, size: 18),
+                    if (venueData.tags.isNotEmpty) const Icon(Icons.verified, color: Color(0xFF0500FA), size: 18),
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -77,8 +77,8 @@ class VenueCard extends StatelessWidget {
                     ...venueData.tags.map((tag) => Container(
                       margin: const EdgeInsets.only(right: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(4)),
-                      child: Text(tag, style: TextStyle(color: Colors.blue[700], fontSize: 8)),
+                      decoration: BoxDecoration(color: Color(0xFFE0E0FF), borderRadius: BorderRadius.circular(4)),
+                      child: Text(tag, style: TextStyle(color: Color(0xFF000099), fontSize: 8)),
                     )),
                   ],
                 ),
@@ -110,7 +110,7 @@ class VenueCard extends StatelessWidget {
                     ElevatedButton(
                       onPressed: venueData.buttonEnabled ? () {} : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: venueData.buttonEnabled ? Colors.blue : Colors.grey[300],
+                        backgroundColor: venueData.buttonEnabled ? const Color(0xFF0500FA) : Colors.grey[300],
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         minimumSize: const Size(65, 26),
                       ),

@@ -274,7 +274,6 @@ class _PublishCompetitionPageState extends State<PublishCompetitionPage> {
       request.fields['filepath'] = 'images\\singeravatar';
       request.fields['filename1'] = imageName;
       request.fields['url'] = imageName;
-      request.fields['userid'] = '180272';
       request.fields['compid'] = compid;
 
       var response = await request.send();

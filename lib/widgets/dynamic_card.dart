@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/main/dynamic_model.dart'; // 导入模型类
-import 'dart:ui' as ui;
-import 'package:flutter/services.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
+import '../pages/photo_viewer_page.dart'; // 导入图片查看器页面
 
 // 动态卡片组件
 // 通用动态卡片组件（支持自定义内容）
@@ -56,11 +53,150 @@ class _DynamicCardState extends State<DynamicCard> {
     });
   }
 
+  bool _isNetworkPath(String path) {
+    return path.startsWith('http://') || path.startsWith('https://');
+  }
+
+  Widget _buildLoadingPlaceholder({
+    double? width,
+    double? height,
+    bool isAvatar = false,
+  }) {
+    final placeholder = Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        shape: isAvatar ? BoxShape.circle : BoxShape.rectangle,
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+
+    if (isAvatar) {
+      return SizedBox(width: 48, height: 48, child: placeholder);
+    }
+    return placeholder;
+  }
+
+  Widget _buildErrorPlaceholder({
+    double? width,
+    double? height,
+    bool isAvatar = false,
+  }) {
+    final placeholder = Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        shape: isAvatar ? BoxShape.circle : BoxShape.rectangle,
+      ),
+      child: Icon(
+        isAvatar ? Icons.person : Icons.image_not_supported_outlined,
+        color: Colors.grey[500],
+        size: isAvatar ? 28 : 32,
+      ),
+    );
+
+    if (isAvatar) {
+      return SizedBox(width: 48, height: 48, child: placeholder);
+    }
+    return placeholder;
+  }
+
+  Widget _buildNetworkOrAssetImage(
+    String imagePath, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    bool isAvatar = false,
+    Alignment alignment = Alignment.center,
+  }) {
+    if (imagePath.isEmpty) {
+      return _buildErrorPlaceholder(
+        width: width,
+        height: height,
+        isAvatar: isAvatar,
+      );
+    }
+
+    if (_isNetworkPath(imagePath)) {
+      return Image.network(
+        imagePath,
+        width: width,
+        height: height,
+        fit: fit,
+        alignment: alignment,
+        filterQuality: FilterQuality.medium,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) {
+            return child;
+          }
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            child: child,
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+          return _buildLoadingPlaceholder(
+            width: width,
+            height: height,
+            isAvatar: isAvatar,
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildErrorPlaceholder(
+            width: width,
+            height: height,
+            isAvatar: isAvatar,
+          );
+        },
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      width: width,
+      height: height,
+      fit: fit,
+      alignment: alignment,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildErrorPlaceholder(
+          width: width,
+          height: height,
+          isAvatar: isAvatar,
+        );
+      },
+    );
+  }
+
+  Widget _buildAvatar() {
+    return ClipOval(
+      child: _buildNetworkOrAssetImage(
+        widget.dynamicData.avatarUrl,
+        width: 48,
+        height: 48,
+        isAvatar: true,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 0,left: 0,bottom: 1,top: 0),
-      padding: const EdgeInsets.only(right:16,left:16,top: 8,bottom: 8),
+      margin: const EdgeInsets.only(right: 0, left: 0, bottom: 1, top: 0),
+      padding: const EdgeInsets.only(right: 16, left: 16, top: 8, bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         // borderRadius: BorderRadius.circular(12),
@@ -72,16 +208,7 @@ class _DynamicCardState extends State<DynamicCard> {
           Row(
             children: [
               // 头像（自定义URL + 在线状态）
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: widget.dynamicData.avatarUrl.startsWith('http://') || widget.dynamicData.avatarUrl.startsWith('https://')
-                        ? NetworkImage(widget.dynamicData.avatarUrl)
-                        : AssetImage(widget.dynamicData.avatarUrl) as ImageProvider,
-                  ),
-                ],
-              ),
+              Stack(children: [_buildAvatar()]),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,27 +216,36 @@ class _DynamicCardState extends State<DynamicCard> {
                   // 用户名（自定义）
                   Text(
                     widget.dynamicData.userName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   // 地理位置（自定义）
                   Row(
                     children: [
-                      if (widget.dynamicData.iconUrl != null) 
-                        Image.asset(widget.dynamicData.iconUrl!,height: 15,width: 45,),
-                        
-                      const SizedBox(width:12),
+                      if (widget.dynamicData.iconUrl != null)
+                        Image.asset(
+                          widget.dynamicData.iconUrl!,
+                          height: 15,
+                          width: 45,
+                        ),
+
+                      const SizedBox(width: 12),
 
                       Text(
                         widget.dynamicData.location,
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
               const Spacer(),
-
             ],
           ),
           const SizedBox(height: 8),
@@ -120,67 +256,41 @@ class _DynamicCardState extends State<DynamicCard> {
           ),
           const SizedBox(height: 10),
 
-
-        // 3. 图片内容
-
+          // 3. 图片内容
           Container(
             alignment: Alignment.centerLeft,
             child: widget.dynamicData.imageUrls.length == 1
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final imgPath = widget.dynamicData.imageUrls.first;    //获得图片地址
-                        // final maxWidth = constraints.maxWidth * 3 / 5;  //获得宽度
-                        // debugPrint("屏幕宽度：$maxWidth");
+                ? GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PhotoViewerPage(
+                            imageUrls: widget.dynamicData.imageUrls,
+                            initialIndex: 0,
+                          ),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final imgPath =
+                              widget.dynamicData.imageUrls.first; //获得图片地址
+                          final imageWidth = constraints.maxWidth < 250
+                              ? constraints.maxWidth
+                              : 250.0;
+                          final imageHeight = imageWidth * 0.6;
 
-                        return FutureBuilder<Size>(
-                          future: getImageSize(imgPath), // 获取图片真实宽高
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const SizedBox(); // 加载中
-                            }
-
-                            // 拿到图片真实宽高
-                            final imgW = snapshot.data!.width;
-                            final imgH = snapshot.data!.height;
-                            debugPrint("宽：$imgW,高：$imgH");
-
-                            // 计算高度：保持比例，宽度固定 2/3 屏幕
-                            // final autoHeight = maxWidth * (imgH / imgW);
-                            if(imgH>4000){
-                              return imgPath.startsWith('http://') || imgPath.startsWith('https://')
-                                  ? Image.network(
-                                      imgPath,
-                                      width: 160,
-                                      height: 250,
-                                      fit: BoxFit.fill,
-                                    )
-                                  : Image.asset(
-                                      imgPath,
-                                      width: 160,
-                                      height: 250,
-                                      fit: BoxFit.fill,
-                                    );
-                            }else{
-                              return imgPath.startsWith('http://') || imgPath.startsWith('https://')
-                                  ? Image.network(
-                                      imgPath,
-                                      width: 250,
-                                      height: 150,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.asset(
-                                      imgPath,
-                                      width: 250,
-                                      height: 150,
-                                      fit: BoxFit.cover,
-                                    );
-                            }
-                            
-                          },
-                        );
-                      },
+                          return _buildNetworkOrAssetImage(
+                            imgPath,
+                            width: imageWidth,
+                            height: imageHeight,
+                            alignment: Alignment.center,
+                          );
+                        },
+                      ),
                     ),
                   )
                 : GridView.count(
@@ -189,23 +299,37 @@ class _DynamicCardState extends State<DynamicCard> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 4,
                     mainAxisSpacing: 4,
-                    // childAspectRatio: 1.0,
-                    children: widget.dynamicData.imageUrls.map((url) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: url.startsWith('http://') || url.startsWith('https://')
-                            ? Image.network(
-                                url,
-                                width: 10,
-                                height: 10,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.asset(
-                                url,
-                                width: 10,
-                                height: 10,
-                                fit: BoxFit.cover,
+                    children: widget.dynamicData.imageUrls.asMap().entries.map((
+                      entry,
+                    ) {
+                      final index = entry.key;
+                      final url = entry.value;
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PhotoViewerPage(
+                                imageUrls: widget.dynamicData.imageUrls,
+                                initialIndex: index,
                               ),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final imageSize = constraints.maxWidth;
+                              return _buildNetworkOrAssetImage(
+                                url,
+                                width: imageSize,
+                                height: imageSize,
+                                alignment: Alignment.center,
+                              );
+                            },
+                          ),
+                        ),
                       );
                     }).toList(),
                   ),
@@ -221,13 +345,21 @@ class _DynamicCardState extends State<DynamicCard> {
                   child: Row(
                     children: [
                       Image.asset(
-                        isLiked ? 'assets/images/zb/点赞 (1).png' : 'assets/images/zb/点赞 (1).png',
+                        isLiked
+                            ? 'assets/images/zb/点赞 (1).png'
+                            : 'assets/images/zb/点赞 (1).png',
                         width: 22,
                         height: 22,
                         color: isLiked ? Colors.red : null,
                       ),
                       const SizedBox(width: 4),
-                      Text('$likeCount', style: TextStyle(color: isLiked ? Colors.red : Colors.grey)),
+                      Text(
+                        likeCount > 0 ? '$likeCount' : '点赞',
+                        style: TextStyle(
+                          color: isLiked ? Colors.red : Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -236,18 +368,18 @@ class _DynamicCardState extends State<DynamicCard> {
                 flex: 1,
                 child: Row(
                   children: [
-                    Column(
-                      children: [
-                        // Container(height: 4),
-                        Row(
-                          children: [
-                            Image.asset('assets/images/zb/消息圆.png',width: 20,height: 20,),
-                            const SizedBox(width: 4),
-                            Text('${widget.dynamicData.collectCount}', style: const TextStyle(color: Colors.grey)),
-                          ],
-                        )
-                      ],
-                    )
+                    Image.asset(
+                      'assets/images/zb/消息圆.png',
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.dynamicData.commentCount > 0
+                          ? '${widget.dynamicData.commentCount}'
+                          : '评论',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -257,23 +389,20 @@ class _DynamicCardState extends State<DynamicCard> {
                   onTap: toggleCollect,
                   child: Row(
                     children: [
-                      Column(
-                        children: [
-                          Container(height: 1),
-                          Row(
-                            children: [
-                              Image.asset(
-                                'assets/images/zb/收藏3.png',
-                                width: 22,
-                                height: 22,
-                                color: isCollected ? Colors.red : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Text('$collectCount', style: TextStyle(color: isCollected ? Colors.red : Colors.grey)),
-                            ],
-                          )
-                        ],
-                      )
+                      Image.asset(
+                        'assets/images/zb/收藏3.png',
+                        width: 22,
+                        height: 22,
+                        color: isCollected ? Colors.red : null,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        collectCount > 0 ? '$collectCount' : '收藏',
+                        style: TextStyle(
+                          color: isCollected ? Colors.red : Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -281,10 +410,16 @@ class _DynamicCardState extends State<DynamicCard> {
               const Spacer(),
               Row(
                 children: [
-                  Image.asset('assets/images/zb/转发1.png',width: 22,height: 22,),
-                  // const Icon(Icons.redo_outlined, color: Colors.grey),
+                  Image.asset(
+                    'assets/images/zb/转发1.png',
+                    width: 22,
+                    height: 22,
+                  ),
                   const SizedBox(width: 4),
-                  // Text('${widget.dynamicData.commentCount}', style: const TextStyle(color: Colors.grey)),
+                  const Text(
+                    '转发',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ],
               ),
             ],
@@ -293,27 +428,4 @@ class _DynamicCardState extends State<DynamicCard> {
       ),
     );
   }
-}
-
-
-
-// 获取图片宽高，支持本地资源和网络图片
-Future<Size> getImageSize(String path) async {
-  Uint8List imageData;
-  
-  // 判断是网络图片还是本地资源
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    // 网络图片
-    final response = await http.get(Uri.parse(path));
-    imageData = response.bodyBytes;
-  } else {
-    // 本地资源
-    final data = await rootBundle.load(path);
-    imageData = data.buffer.asUint8List();
-  }
-  
-  final image = await decodeImageFromList(imageData);   //解码数据
-  final width = image.width.toDouble();   //获得宽度
-  final height = image.height.toDouble();   //获得高度
-  return Size(width, height);   //返回宽高
 }

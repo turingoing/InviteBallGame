@@ -95,6 +95,11 @@ class _BallReservationPageState extends State<BallReservationPage> {
               }
             }
             
+            // 从API获取已加入人数
+            int joinedNumber = item['joinednum'] is int 
+                ? item['joinednum'] 
+                : int.tryParse(item['joinednum']?.toString() ?? '1') ?? 1;
+            
             // 创建BallReservationItem对象
             BallReservationItem reservationItem = BallReservationItem(
               avatarUrl: 'https://www.example.com/avatar.jpg', // 默认头像
@@ -104,8 +109,8 @@ class _BallReservationPageState extends State<BallReservationPage> {
               score: 4.5, // 默认球品评分
               location: item['location'] ?? '', // 直接使用API返回的location
               time: displayTime, // 使用处理后的时间
-              lackCount: participantCount > 1 ? participantCount - 1 : 0, // 缺少人数 = 总人数 - 1(创建者)
-              joinedCount: 1, // 默认已加入1人(创建者自己)
+              lackCount: participantCount > joinedNumber ? participantCount - joinedNumber : 0, // 缺少人数 = 总人数 - 已加入人数
+              joinedCount: joinedNumber, // 使用API返回的已加入人数
               totalCount: participantCount, // 总人数
               feeType: _getFeeType(feeMode), // 根据feeMode获取费用类型
               roomNo: item['inviteid'] ?? '', // 使用inviteid作为房间号
@@ -184,7 +189,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),   //顶部
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(   
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -257,7 +262,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
           Text(
             '搜索俱乐部、球友或房间号',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 12,
               color: Colors.grey,
             ),
           ),
@@ -297,7 +302,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
             '请遵守场馆规定，文明约球。严禁任何形式的违规行为，共同维护绿色台球环境。',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF6E6E73),
+              color: Color(0xFF575C6F),
               height: 1.5,
             ),
           ),
@@ -407,9 +412,9 @@ class _BallReservationPageState extends State<BallReservationPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -422,7 +427,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
             children: [
               // 头像
               CircleAvatar(
-                radius: 30,
+                radius: 20,
                 backgroundImage: NetworkImage(item.avatarUrl),   //图片来源
               ),
               const SizedBox(width: 12),
@@ -474,7 +479,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
                           '球品 ${item.score}',
                           style: const TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF6E6E73),
+                            color: Color(0xFF575C6F),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -482,7 +487,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
                           '· 活跃于 南京东路',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF6E6E73),
+                            color: Color(0xFF575C6F),
                           ),
                         ),
                       ],
@@ -497,9 +502,9 @@ class _BallReservationPageState extends State<BallReservationPage> {
                   Text(
                     '费用: ${item.feeType}',
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF007AFF),
+                      color: Color(0xFF0500FA),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -507,7 +512,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
                     '房间号: ${item.roomNo}',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF6E6E73),
+                      color: Color(0xFF575C6F),
                     ),
                   ),
                 ],
@@ -518,12 +523,12 @@ class _BallReservationPageState extends State<BallReservationPage> {
           // 场馆位置
           Row(
             children: [
-              const Icon(Icons.location_on, color: Color(0xFF6E6E73), size: 18),
+              const Icon(Icons.location_on, color: Color(0xFF6E6E73), size: 14),
               const SizedBox(width: 6),
               Text(
                 item.location,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 12,
                   color: Colors.black,
                 ),
               ),
@@ -533,12 +538,12 @@ class _BallReservationPageState extends State<BallReservationPage> {
           // 时间
           Row(
             children: [
-              const Icon(Icons.access_time, color: Color(0xFF6E6E73), size: 18),
+              const Icon(Icons.access_time, color: Color(0xFF6E6E73), size: 14),
               const SizedBox(width: 6),
               Text(
                 item.time,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 12,
                   color: Colors.black,
                 ),
               ),
@@ -548,12 +553,12 @@ class _BallReservationPageState extends State<BallReservationPage> {
           // 缺人信息
           Row(
             children: [
-              const Icon(Icons.people, color: Color(0xFF6E6E73), size: 18),
+              const Icon(Icons.people, color: Color(0xFF6E6E73), size: 14),
               const SizedBox(width: 6),
               Text(
                 '缺 ${item.lackCount} 人 (已加入: ${item.joinedCount}/${item.totalCount})',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 12,
                   color: Colors.black,
                 ),
               ),
@@ -563,12 +568,12 @@ class _BallReservationPageState extends State<BallReservationPage> {
           // 约球类型
           Row(
             children: [
-              const Icon(Icons.sports_bar, color: Color(0xFF6E6E73), size: 18),
+              const Icon(Icons.sports_bar, color: Color(0xFF6E6E73), size: 14),
               const SizedBox(width: 6),
               Text(
                 '约球类型: ${item.gameType}',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 12,
                   color: Colors.black,
                 ),
               ),
@@ -580,14 +585,14 @@ class _BallReservationPageState extends State<BallReservationPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.note, color: Color(0xFF6E6E73), size: 18),
+                const Icon(Icons.note, color: Color(0xFF6E6E73), size: 15),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '备注: ${item.note}',
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF6E6E73),
+                      fontSize: 12,
+                      color: Color(0xFF575C6F),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -607,7 +612,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
                     Navigator.push(context, MaterialPageRoute(builder: (context)=>MatchDetailPage(inviteid: item.inviteId)));
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
+                    backgroundColor: const Color(0xFF0500FA),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -621,7 +626,7 @@ class _BallReservationPageState extends State<BallReservationPage> {
                     child: const Text(
                       '立即加入',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),

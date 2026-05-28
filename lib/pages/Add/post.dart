@@ -294,7 +294,7 @@ class _PublishPostPageState extends State<PublishPostPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue,
+                        color: const Color(0xFF0500FA),
                       ),
                     ),
             ),

@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              '月跃AI',
+              '约球',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // 数据存储服务
 class DataStorage {
@@ -8,6 +9,7 @@ class DataStorage {
   static const String _inviteListFileName = 'invite_list.json';
   static const String _postIdFileName = 'postid.txt';
   static const String _itsidFileName = 'itsid.txt';
+  static const String _globalIdCounterKey = 'global_id_counter';
 
   // 获取应用文档目录路径
   static Future<String> get _documentPath async {
@@ -65,15 +67,33 @@ class DataStorage {
 
   static Future<int> getAndIncrementPostId() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      int currentPostId = prefs.getInt(_globalIdCounterKey) ?? 0;
+
+      // 兼容旧版文件计数器，避免升级后又从 1 开始。
+      if (currentPostId <= 0) {
+        final filePath = await _postIdFilePath;
+        final file = File(filePath);
+        if (await file.exists()) {
+          final content = await file.readAsString();
+          currentPostId = int.tryParse(content) ?? 0;
+        }
+      }
+
+      // 确保帖子ID从30开始
+      if (currentPostId < 29) {
+        currentPostId = 29;
+      }
+
+      currentPostId++;
+      await prefs.setInt(_globalIdCounterKey, currentPostId);
+
+      // 同步写回旧文件，兼容仍依赖文件值的旧逻辑。
       final filePath = await _postIdFilePath;
       final file = File(filePath);
-      int currentPostId = 0;
-      if (await file.exists()) {
-        String content = await file.readAsString();
-        currentPostId = int.tryParse(content) ?? 0;
-      }
-      currentPostId++;
       await file.writeAsString(currentPostId.toString());
+
+      print('✅ 全局帖子计数器自增成功: $currentPostId');
       return currentPostId;
     } catch (e) {
       print('获取帖子ID失败: $e');

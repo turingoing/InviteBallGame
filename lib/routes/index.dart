@@ -29,7 +29,18 @@ Widget getRootWidget(){
           ),
         ),
         // 其他主题配置...
-        primarySwatch: Colors.blue,
+        primarySwatch: MaterialColor(0xFF0500FA, const {
+          50: Color(0xFFE0E0FF),
+          100: Color(0xFFB3B3FF),
+          200: Color(0xFF8080FF),
+          300: Color(0xFF4D4DFF),
+          400: Color(0xFF1A1AFF),
+          500: Color(0xFF0500FA),
+          600: Color(0xFF0000CC),
+          700: Color(0xFF000099),
+          800: Color(0xFF000066),
+          900: Color(0xFF000033),
+        }),
       ),
 
     initialRoute: "/splash",

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/pages/Mine/components/member.dart';
 import 'package:flutter_application_1/pages/Mine/components/myplay.dart';
 import 'package:flutter_application_1/pages/Mine/components/mypublish.dart';
+import 'package:flutter_application_1/pages/Mine/components/edit_profile.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
 import 'package:flutter_application_1/pages/Auth/login.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class MinePage extends StatelessWidget {
   const MinePage({super.key});
@@ -58,15 +61,104 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
 
   // 用户核心数据
-  final String _userName = '台球爱好者小张';
-  final String _userId = 'ID: 8829103';
-  final String _location = '上海';
-  final String _creditScore = '98';
-  final String _levelTag = '实力达人';
-  final String _avatarUrl = 'https://picsum.photos/200/200?random=user';
+  String _userName = '台球爱好者小张';
+  String _userId = 'ID: 8829103';
+  String _location = '上海';
+  String _creditScore = '98';
+  String _levelTag = '实力达人';
+  String _avatarUrl = 'https://picsum.photos/200/200?random=user';
+  
+  // 会员及身份标识
+  String _userType = '0'; // 0:非会员, 1:会员
+  String _userTitle = '0'; // 0:普通用户, 1:教练, 2:商家, 3:官方
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserInfo();
+  }
+
+  String _getBallRatingStr(String ratingStr) {
+    final rating = int.tryParse(ratingStr) ?? 0;
+    switch (rating) {
+      case 0:
+        return '新手';
+      case 1:
+        return '业余';
+      case 2:
+        return '高手';
+      default:
+        return '新手';
+    }
+  }
+
+  Future<void> _fetchUserInfo() async {
+    try {
+      String? itsid = await DataStorage.loadItsid();
+      if (itsid == null || itsid.isEmpty) return;
+
+      final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=07&itcid=11807&itsid=$itsid');
+      print('请求个人中心接口URL: $url');
+      final response = await http.get(url);
+      print('个人中心接口响应状态码: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        print('个人中心接口返回数据: ${response.body}');
+        var data = json.decode(response.body);
+        // 如果数据包裹在 data 字段中
+        Map<String, dynamic> userInfo = data;
+        if (data is Map && data.containsKey('data')) {
+          userInfo = data['data'];
+        }
+
+        setState(() {
+          if (userInfo['username'] != null && userInfo['username'].toString().isNotEmpty) {
+            _userName = userInfo['username'].toString();
+          }
+          if (userInfo['headimg'] != null && userInfo['headimg'].toString().isNotEmpty) {
+            _avatarUrl = 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/${userInfo['headimg']}';
+            print('最终解析拼接后的头像URL: $_avatarUrl');
+          }
+
+          // 其他个人信息展示
+          if (userInfo['userid'] != null) {
+            String city = userInfo['city']?.toString() ?? '';
+            _userId = '搭子号：${userInfo['userid']} | 坐标：$city';
+            _location = city; // 若别处仍需用单独的 location，顺便更新
+          }
+
+          if (userInfo['creditscore'] != null) {
+            _creditScore = userInfo['creditscore'].toString();
+          }
+
+          if (userInfo['ballrateing'] != null) {
+            _levelTag = _getBallRatingStr(userInfo['ballrateing'].toString());
+          }
+
+          // 解析会员及身份标识
+          if (userInfo['usertype'] != null) {
+            _userType = userInfo['usertype'].toString();
+          }
+          if (userInfo['usertitle'] != null) {
+            _userTitle = userInfo['usertitle'].toString();
+          }
+
+          // 数据统计栏：关注，粉丝，获赞，动态
+          _statsList = [
+            {'value': userInfo['followcount']?.toString() ?? '0', 'label': '关注'},
+            {'value': userInfo['followercount']?.toString() ?? '0', 'label': '粉丝'},
+            {'value': userInfo['likecount']?.toString() ?? '0', 'label': '获赞'},
+            {'value': userInfo['postcount']?.toString() ?? '0', 'label': '动态'},
+          ];
+        });
+      }
+    } catch (e) {
+      print('获取用户信息失败: $e');
+    }
+  }
 
   // 数据统计
-  final List<Map<String, String>> _statsList = [
+  List<Map<String, String>> _statsList = [
     {'value': '128', 'label': '关注'},
     {'value': '1.2k', 'label': '粉丝'},
     {'value': '3.5k', 'label': '获赞'},
@@ -157,9 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
             // 黑金会员卡片
             _buildVipCard(),
             const SizedBox(height: 16),
-            // 申请教练按钮
-            _buildApplyCoachButton(),
-            const SizedBox(height: 32),
+            // 申请教练按钮 (仅对普通用户 usertitle=='0' 展示)
+            if (_userTitle == '0') ...[
+              _buildApplyCoachButton(),
+              const SizedBox(height: 32),
+            ],
             // 核心功能
             _buildSectionTitle('核心功能'),
             const SizedBox(height: 16),
@@ -189,8 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const Text(
               '个人中心',
               style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+                fontSize: 20,
                 color: Colors.black,
               ),
             ),
@@ -322,23 +415,27 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Image.network(
                       _avatarUrl,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.person, size: 50, color: Colors.grey[400]);
+                      },
                     ),
                   ),
                 ),
-                // 认证蓝勾
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF007AFF),
-                      shape: BoxShape.circle,
+                // 身份标识（教练：蓝标；商家：红标；普通用户/官方不显示此处图标）
+                if (_userTitle == '1' || _userTitle == '2')
+                  Positioned(
+                    right: 4,
+                    bottom: 4,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: _userTitle == '2' ? const Color(0xFFFF4444) : const Color(0xFF007AFF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, color: Colors.white, size: 18),
                     ),
-                    child: const Icon(Icons.check, color: Colors.white, size: 18),
                   ),
-                ),
               ],
             ),
             const SizedBox(width: 16),
@@ -350,15 +447,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   // 姓名 + V3等级
                   Row(
                     children: [
-                      Text(
-                        _userName,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                      Flexible(
+                        child: Text(
+                          _userName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // const SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -379,7 +479,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 8),
                   // ID + 坐标
                   Text(
-                    '$_userId | 坐标: $_location',
+                    _userId,
                     style: const TextStyle(
                       fontSize: 10,
                       color: Color(0xFF666666),
@@ -389,33 +489,45 @@ class _ProfilePageState extends State<ProfilePage> {
                   // 信用 + 实力达人标签
                   Row(
                     children: [
-                      _buildTag(Icons.shield, '信用 $_creditScore', const Color(0xFF2962FF)),
-                      const SizedBox(width: 16),
-                      _buildTag(Icons.star, _levelTag, const Color(0xFFFF9800)),
+                      Flexible(
+                        child: _buildTag(Icons.shield, '信用 $_creditScore', const Color(0xFF2962FF)),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: _buildTag(Icons.star, _levelTag, const Color(0xFFFF9800)),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
             // 编辑资料按钮
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.edit, size: 10, color: Color(0xFF666666)),
-                  SizedBox(width: 4),
-                  Text(
-                    '编辑资料',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF666666),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.edit, size: 10, color: Color(0xFF666666)),
+                    SizedBox(width: 4),
+                    Text(
+                      '编辑资料',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF666666),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -427,15 +539,19 @@ class _ProfilePageState extends State<ProfilePage> {
   // 标签组件
   Widget _buildTag(IconData icon, String text, Color color) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 6, color: color),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 15,
-            color: color,
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 15,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -532,7 +648,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-          // 立即开通按钮
+          // 开通或进入专区按钮
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
@@ -543,9 +659,9 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: (){
                 Navigator.push(context,MaterialPageRoute(builder: (context)=>MemberCenterApp()));
               },
-              child:  Text(
-                '立即开通',
-                style: TextStyle(
+              child: Text(
+                _userType == '1' ? '会员专区' : '立即开通',
+                style: const TextStyle(
                   fontSize: 15,
                   color: Color(0xFF1E1E1E),
                   fontWeight: FontWeight.bold,
@@ -564,11 +680,11 @@ class _ProfilePageState extends State<ProfilePage> {
       margin: const EdgeInsets.symmetric(horizontal: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF2962FF),
+        color: const Color(0xFF0500FA),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2962FF).withOpacity(0.2),
+            color: const Color(0xFF0500FA).withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

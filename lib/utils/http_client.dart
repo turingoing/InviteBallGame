@@ -63,7 +63,8 @@ class HttpClient {
     print('========== 网络请求开始 ==========');
     print('📌 请求URL: $uri');
     print('📌 请求方法: POST');
-    print('📌 请求数据: ${jsonEncode(body)}');
+    print('📌 查询参数: ${uri.queryParameters}');
+    print('📌 请求Body数据: ${jsonEncode(body)}');
     print('=====================================');
 
     try {

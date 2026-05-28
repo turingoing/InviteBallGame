@@ -3,7 +3,7 @@
 
     <application
         android:usesCleartextTraffic="true"
-        android:label="约球"
+        android:label="台球搭子"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

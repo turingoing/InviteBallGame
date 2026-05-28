@@ -92,12 +92,15 @@ class _MainTabPageState extends State<MainTabPage> {
         child: Container(
             // alignment: Alignment.topLeft,
             height: 64,
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
           child:BottomNavigationBar(
               currentIndex: _currentBottomIndex,   //底部导航栏下方跳转的索引(上方以声明)
 
               backgroundColor: Colors.white,   //背景颜色
+              elevation: 0,   //取消阴影
               type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.blue,   //选中颜色
+              selectedItemColor: const Color(0xFF0500FA),   //选中颜色
               unselectedItemColor: Colors.grey,   //未选中颜色
             // 选中 状态下label的文字大小
               selectedLabelStyle: const TextStyle(
@@ -120,9 +123,9 @@ class _MainTabPageState extends State<MainTabPage> {
                 icon: Image.asset('assets/images/dt/Union(2).png',width: 24,height: 24,),
                 activeIcon: Image.asset(
                   'assets/images/dt/Union(2).png',
-                  width: 24,
-                  height: 24,
-                  color: Colors.blue, // 高亮颜色（和 selectedItemColor 一致）
+                  width: 20,
+                  height: 20,
+                  color: const Color(0xFF0500FA), // 高亮颜色（和 selectedItemColor 一致）
                   colorBlendMode: BlendMode.srcIn, // 保证颜色只应用到图片内容，背景透明
                 ),
                 label: '首页',
@@ -131,9 +134,9 @@ class _MainTabPageState extends State<MainTabPage> {
               icon: Image.asset('assets/images/dt/Union(3).png',width: 24,height: 24,),
               activeIcon: Image.asset(
                 'assets/images/dt/Union(3).png',
-                width: 24,
-                height: 24,
-                color: Colors.blue, // 高亮颜色（和 selectedItemColor 一致）
+                width: 20,
+                height: 20,
+                color: const Color(0xFF0500FA), // 高亮颜色（和 selectedItemColor 一致）
                 colorBlendMode: BlendMode.srcIn, // 保证颜色只应用到图片内容，背景透明
               ),
               label: '约球',
@@ -146,7 +149,7 @@ class _MainTabPageState extends State<MainTabPage> {
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
-                  color: Colors.blue,
+                  color: Color(0xFF0500FA),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.add, color: Colors.white, size: 24),
@@ -178,9 +181,9 @@ class _MainTabPageState extends State<MainTabPage> {
                 children: [
                   Image.asset(
                     'assets/images/dt/Union(4).png',
-                    width: 24,
-                    height: 24,
-                    color: Colors.blue, // 高亮颜色
+                    width: 20,
+                    height: 20,
+                    color: const Color(0xFF0500FA), // 高亮颜色
                     colorBlendMode: BlendMode.srcIn, // 保证只给图片上色
                   ),
                   Positioned(
@@ -206,9 +209,9 @@ class _MainTabPageState extends State<MainTabPage> {
                 icon: Image.asset('assets/images/dt/Union(5).png',width: 24,height: 24,),
                 activeIcon: Image.asset(
                   'assets/images/dt/Union(5).png',
-                  width: 24,
-                  height: 24,
-                  color: Colors.blue, // 高亮颜色（和 selectedItemColor 一致）
+                  width: 200,
+                  height: 20,
+                  color: const Color(0xFF0500FA), // 高亮颜色（和 selectedItemColor 一致）
                   colorBlendMode: BlendMode.srcIn, // 保证颜色只应用到图片内容，背景透明
                 ),
                 label: '我的',
@@ -280,7 +283,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           indicator: const UnderlineTabIndicator(
 
             borderSide: BorderSide(
-              color: Colors.blue,
+              color: Color(0xFF0500FA),
               width: 3, // 线条粗细
             ),
             insets: EdgeInsets.only(bottom: 6), // 控制距离文字的位置

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/utils/http_client.dart';
+import 'package:flutter_application_1/pages/VenueList/components/payment_page.dart';
 
 // 评价项数据模型
 class CommentItem {
@@ -99,7 +101,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       String? itsid = await DataStorage.loadItsid();
       
       // 构建API请求URL
-      String baseUrl = 'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=06&itcid=11804&inviteid=${widget.inviteid}';
+      String baseUrl = 'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=06&itcid=11804&inviteid=${widget.inviteid}';//读端口
       if (itsid != null && itsid.isNotEmpty) {
         baseUrl += '&itsid=$itsid';
       }
@@ -904,31 +906,26 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   // 加入约球
   Future<void> _joinMatch() async {
     try {
-      // 获取本地存储的 itsid
-      String? itsid = await DataStorage.loadItsid();
-      
-      // 构建API请求URL
-      String baseUrl = 'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11804&inviteid=${widget.inviteid}';
-      if (itsid != null && itsid.isNotEmpty) {
-        baseUrl += '&itsid=$itsid';
-      }
-      final url = Uri.parse(baseUrl);
-      print('请求加入约球URL: $url');
+      // 使用 HttpClient.postWithMbid 发送请求
+      final response = await HttpClient.postWithMbid(
+        '11804',
+        {
+          'inviteid': widget.inviteid,
+        },
+      );
 
-      // 发送请求
-      final response = await http.get(url);
-
-      print('加入约球响应状态码: ${response.statusCode}');
-      print('加入约球响应内容: ${response.body}');
+      print('加入约球响应: $response');
 
       // 解析响应消息
-      String message = response.body.trim();
+      String code = response['code']?.toString() ?? '';
+      String data = response['data']?.toString() ?? '';
+      String message = data.isNotEmpty ? data : '操作完成';
       
       // 显示消息提示
       _showMessage(message);
 
-      // 如果加入成功，更新页面数据
-      if (message.contains('成功加入')) {
+      // 如果加入成功（code为"0"），更新页面数据并跳转到支付页面
+      if (code == '0') {
         setState(() {
           if (_matchData != null) {
             _matchData = MatchDetailData(
@@ -945,6 +942,15 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
             );
           }
         });
+
+        // 跳转到支付页面
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => PaymentPage(inviteid: widget.inviteid)),
+          );
+        }
       }
     } catch (e) {
       print('加入约球失败: $e');

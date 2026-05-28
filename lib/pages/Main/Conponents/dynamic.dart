@@ -7,9 +7,8 @@ import 'package:flutter_application_1/model/main/dynamic_model.dart';
 import 'package:flutter_application_1/widgets/dynamic_card.dart';
 import 'package:flutter_application_1/widgets/ranking_entry_card.dart'; // 排行榜卡片
 
-
 // 动态列表页
-      // 注意：改成StatefulWidget，因为要异步读取JSON文件
+// 注意：改成StatefulWidget，因为要异步读取JSON文件
 class DynamicPage extends StatefulWidget {
   const DynamicPage({super.key});
 
@@ -32,40 +31,54 @@ class _DynamicPageState extends State<DynamicPage> {
   Future<List<DynamicModel>> _loadDynamicList() async {
     try {
       // 构建请求URL
-      final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=05&itcid=11805');
+      final url = Uri.parse(
+        'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=05&itcid=11805',
+      );
       print('请求动态数据URL: $url');
-      
+
       // 发送请求
       var response = await http.get(url);
       print('动态数据响应状态码: ${response.statusCode}');
       print('动态数据响应内容: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         // 解析响应数据
         Map<String, dynamic> responseData = json.decode(response.body);
-        
+
         if (responseData['code'] == '0' && responseData['data'] is List) {
           List<dynamic> rawDataList = responseData['data'];
-          
+
           // 按postid分组，将相同postid的图片放在一起
           Map<String, Map<String, dynamic>> groupedPosts = {};
-          
+
           for (var item in rawDataList) {
             String postid = item['postid'] ?? '';
-            
+
             if (postid.isEmpty) continue;
-            
+
             if (!groupedPosts.containsKey(postid)) {
               // 新帖子，初始化数据
               groupedPosts[postid] = {
                 'postid': postid,
                 'userid': item['userid'],
+                'username': item['username'],
+                'headimg': item['headimg'],
                 'content': item['content'],
                 'create_time': item['create_time'] ?? item['time'] ?? '',
-                'imageUrls': []
+                'imageUrls': [],
               };
             }
-            
+
+            if (item['username'] != null &&
+                item['username'].toString().trim().isNotEmpty) {
+              groupedPosts[postid]!['username'] = item['username'];
+            }
+
+            if (item['headimg'] != null &&
+                item['headimg'].toString().trim().isNotEmpty) {
+              groupedPosts[postid]!['headimg'] = item['headimg'];
+            }
+
             // 处理图片：imgname字段包含逗号分隔的图片名列表
             if (item['imgname'] != null) {
               String imgNames = item['imgname'].toString().trim();
@@ -78,24 +91,37 @@ class _DynamicPageState extends State<DynamicPage> {
                   imgName = imgName.trim();
                   if (imgName.isNotEmpty) {
                     // 拼接完整的图片URL路径
-                    String fullImgUrl = 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$imgName';
+                    String fullImgUrl =
+                        'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$imgName';
                     groupedPosts[postid]!['imageUrls'].add(fullImgUrl);
                   }
                 }
               }
             }
           }
-          
+
           // 将分组后的数据转换为DynamicModel列表
           List<DynamicModel> dynamicList = [];
           groupedPosts.forEach((postid, data) {
+            String userName = data['username']?.toString().trim() ?? '';
+            userName = userName.replaceAll('`', '');
+
+            String avatarName = data['headimg']?.toString().trim() ?? '';
+            avatarName = avatarName.replaceAll('`', '');
+
             // 构建DynamicModel对象
             DynamicModel dynamicModel = DynamicModel(
-              avatarUrl: 'https://www.example.com/avatar.jpg', // 默认头像
-              userName: '用户${data['userid'] ?? '未知'}', // 使用userid作为用户名，处理null情况
+              avatarUrl: avatarName.isNotEmpty
+                  ? 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$avatarName'
+                  : 'https://www.example.com/avatar.jpg',
+              userName: userName.isNotEmpty
+                  ? userName
+                  : '用户${data['userid'] ?? '未知'}',
               location: '', // 接口没有返回位置信息
               content: data['content'] ?? '',
-              imageUrls: data['imageUrls'] is List ? List<String>.from(data['imageUrls']) : [], // 确保是List类型
+              imageUrls: data['imageUrls'] is List
+                  ? List<String>.from(data['imageUrls'])
+                  : [], // 确保是List类型
               likeCount: 0, // 接口没有返回点赞数
               collectCount: 0, // 接口没有返回收藏数
               commentCount: 0, // 接口没有返回评论数
@@ -103,7 +129,7 @@ class _DynamicPageState extends State<DynamicPage> {
             );
             dynamicList.add(dynamicModel);
           });
-          
+
           return dynamicList;
         } else {
           throw Exception('数据格式错误: ${response.body}');
@@ -135,6 +161,7 @@ class _DynamicPageState extends State<DynamicPage> {
         // 3. 数据加载成功，渲染列表
         final dynamicList = snapshot.data!;
         return ListView.builder(
+          cacheExtent: 1200,
           // padding: const EdgeInsets.symmetric(vertical: 2),
           itemCount: dynamicList.length + 1, // 排行榜+动态列表
           itemBuilder: (context, index) {

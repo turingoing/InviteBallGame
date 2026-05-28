@@ -9,7 +9,7 @@ class RankingEntryCard extends StatelessWidget {
    @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 0,left: 0,bottom: 3),
+      margin: const EdgeInsets.only(right: 0,left: 0,bottom: 1),
       padding: const EdgeInsets.only(right:16,left:16,top: 8,bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -53,7 +53,7 @@ class RankingEntryCard extends StatelessWidget {
                   // 点击进入榜单页面
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, // 按钮背景色
+                  backgroundColor: const Color(0xFF0500FA), // 按钮背景色
                   foregroundColor: Colors.white, // 文字颜色
                   padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 8),
                   shape: RoundedRectangleBorder(
