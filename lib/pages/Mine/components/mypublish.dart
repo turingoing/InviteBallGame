@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/mine/mypublish.dart';
 import 'package:flutter_application_1/api/competition_api.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/pages/Mine/components/invite_detail.dart';
+import 'package:flutter_application_1/pages/Mine/components/qr_scanner_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/qr_code_dialog.dart';
 
 class MyPublishPage extends StatefulWidget {
   const MyPublishPage({super.key});
@@ -150,7 +153,17 @@ class _MyPublishPageState extends State<MyPublishPage> {
                         ...activityList.map((activity) {
                           return Column(
                             children: [
-                              _ActivitySection(activity: activity),
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => InviteDetailPage(inviteId: activity.inviteid ?? ''),
+                                    ),
+                                  );
+                                },
+                                child: _ActivitySection(activity: activity),
+                              ),
                               const SizedBox(height: 20),
                             ],
                           );
@@ -256,24 +269,24 @@ class _ActivitySection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildInfoRow(Icons.location_on, activity.location),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _buildInfoRow(Icons.access_time, activity.date),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _buildInfoRow(Icons.person_outline, '参与人数: ${activity.participantCount ?? 0}人'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _buildInfoRow(Icons.star, '球技要求: ${activity.skillLevelName}'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _buildInfoRow(Icons.payment, '费用模式: ${activity.feeModeName}'),
           if ((activity.note ?? '').isNotEmpty)
             Column(
               children: [
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 _buildInfoRow(Icons.note, activity.note ?? ''),
               ],
             ),
           const SizedBox(height: 16),
           if (!activity.isUsed)
-            _buildUsedActions()
+            _buildUsedActions(context)
           else
             _buildUnusedActions(),
         ],
@@ -306,7 +319,9 @@ class _ActivitySection extends StatelessWidget {
     );
   }
 
-  Widget _buildUsedActions() {
+  Widget _buildUsedActions(BuildContext context) {
+    bool isExpired = activity.isExpired24h;
+    
     return Row(
       children: [
         Expanded(
@@ -316,22 +331,63 @@ class _ActivitySection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color: isExpired ? const Color(0xFFE0E0E0) : const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text('数字码'),
-              ),
-              ElevatedButton(
-                onPressed: null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4285F4),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+                child: Text(
+                  '数字码',
+                  style: TextStyle(
+                    color: isExpired ? const Color(0xFF9E9E9E) : Colors.black,
                   ),
                 ),
-                child: const Text('核销码'),
+              ),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: isExpired ? null : () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QRScannerPage()),
+                      );
+                      if (!context.mounted) return;
+                      if (result != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('扫码结果: $result')),
+                        );
+                        // TODO: 处理扫码后的核销逻辑，比如调用API
+                      }
+                    },
+                    icon: const Icon(Icons.qr_code_scanner, size: 18),
+                    label: const Text('扫一扫'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isExpired ? const Color(0xFF9E9E9E) : const Color(0xFF4285F4),
+                      side: BorderSide(color: isExpired ? const Color(0xFF9E9E9E) : const Color(0xFF4285F4)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: isExpired ? null : () {
+                      final qrData = 'verify_${activity.inviteid ?? activity.itieId}';
+                      showDialog(
+                        context: context,
+                        builder: (context) => QrCodeDialog(qrData: qrData),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isExpired ? const Color(0xFFE0E0E0) : const Color(0xFF4285F4),
+                      foregroundColor: isExpired ? const Color(0xFF9E9E9E) : Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: const Text('核销码'),
+                  ),
+                ],
               ),
             ],
           ),

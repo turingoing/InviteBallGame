@@ -242,10 +242,10 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildTopBar(),
             // 用户信息区域
             _buildUserInfoSection(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             // 数据统计栏
             _buildStatsBar(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             // 黑金会员卡片
             _buildVipCard(),
             const SizedBox(height: 16),
@@ -256,12 +256,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
             // 核心功能
             _buildSectionTitle('核心功能'),
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             _buildCoreFunctionGrid(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             // 更多服务
             _buildSectionTitle('更多服务'),
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             _buildServiceList(),
             const SizedBox(height: 24),
           ],
@@ -289,6 +289,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             Row(
               children: [
+                _buildTopIcon(Icons.edit),
+                const SizedBox(width: 16),
                 _buildTopIcon(Icons.notifications_none),
                 const SizedBox(width: 16),
                 _buildTopIcon(Icons.settings),
@@ -306,6 +308,11 @@ class _ProfilePageState extends State<ProfilePage> {
       onTap: () {
         if (icon == Icons.settings) {
           _showSettingsMenu();
+        } else if (icon == Icons.edit) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EditProfilePage()),
+          );
         }
       },
       child: Container(
@@ -501,35 +508,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            // 编辑资料按钮
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfilePage()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.edit, size: 10, color: Color(0xFF666666)),
-                    SizedBox(width: 4),
-                    Text(
-                      '编辑资料',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF666666),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -563,7 +541,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: _statsList.map((item) {
@@ -596,61 +574,57 @@ class _ProfilePageState extends State<ProfilePage> {
   // 黑金会员VIP卡片
   Widget _buildVipCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF333333),
-                  borderRadius: BorderRadius.circular(16),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 24),
+          ),
+          const SizedBox(width: 16),
+          //文字区域
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  '黑金会员·VIP',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFD700),
+                  ),
                 ),
-                child: const Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 28),
-              ),
-              const SizedBox(width: 12),
-              //文字区域
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    '黑金会员·VIP',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFD700),
-                    ),
+                SizedBox(height: 4),
+                Text(
+                  '开通会员享12项专属特权',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFAAAAAA),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    '开通会员享12项专属特权',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFFAAAAAA),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
           // 开通或进入专区按钮
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFFFD700),
               borderRadius: BorderRadius.circular(20),
@@ -662,7 +636,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text(
                 _userType == '1' ? '会员专区' : '立即开通',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   color: Color(0xFF1E1E1E),
                   fontWeight: FontWeight.bold,
                 ),
@@ -677,51 +651,70 @@ class _ProfilePageState extends State<ProfilePage> {
   // 申请成为认证教练按钮
   Widget _buildApplyCoachButton() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0500FA),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0500FA).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: const Color.fromARGB(255, 7, 69, 238),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8E5FF), width: 1),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                '想通过台球邀约客户？',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '申请成为认证教练',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
           Container(
-            width: 48,
-            height: 48,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: const Color.fromARGB(255, 11, 93, 247),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.verified_user_outlined,
+              color: Color.fromARGB(255, 255, 255, 255),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '想通过台球邀约客户？',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '申请成为认证用户',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              minimumSize: Size.zero,
+            ),
+            child: const Text(
+              '去申请',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0033FF),
+              ),
+            ),
           ),
         ],
       ),
@@ -748,7 +741,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       color: Colors.white,
       child: GridView.count(
-        padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisCount: 4,

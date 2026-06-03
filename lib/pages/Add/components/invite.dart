@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_application_1/api/competition_api.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/pages/VenueList/components/payment_page.dart';
 
 class InviteForm extends StatefulWidget {
   const InviteForm({super.key});
@@ -77,12 +80,33 @@ class _InviteFormState extends State<InviteForm> {
 
     setState(() {
       _isSubmitting = true;
-      _submitMessage = '提交中...';
+      _submitMessage = '准备支付...';
     });
 
     try {
       int inviteid = await DataStorage.getAndIncrementPostId();
       
+      // 先弹出支付界面
+      final paymentResult = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentPage(inviteid: inviteid.toString()),
+        ),
+      );
+
+      // 如果支付未成功或被取消，停止发布
+      if (paymentResult != true) {
+        setState(() {
+          _isSubmitting = false;
+          _submitMessage = '已取消支付，发布未完成';
+        });
+        return;
+      }
+
+      setState(() {
+        _submitMessage = '支付成功，正在发布...';
+      });
+
       final formData = {
         'location': _locationController.text, // 地点 varchar
         'note': _noteController.text, // 备注
@@ -94,23 +118,47 @@ class _InviteFormState extends State<InviteForm> {
         'invitetime': _startTime, // 时间 datetime（格式：YYYY-MM-DD 00:00:00）
       };
 
-      // 提交约球数据
-      final response = await CompetitionApi.submitInvite(formData);
-
-      setState(() {
-        _submitMessage = '发布成功！';
+      // 调用接口代码直接写在该页 dart 文件里
+      String? itsid = await DataStorage.loadItsid();
+      final uri = Uri.parse('https://www.ruanzi.net/jy/go/phone.aspx').replace(queryParameters: {
+        'mbid': '11801',
+        'ituid': '118',
+        if (itsid != null && itsid.isNotEmpty) 'itsid': itsid,
+        'action': 'invite',
       });
 
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pop(context, true);
+      var request = http.Request('POST', uri);
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+      request.body = jsonEncode(formData);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300 || [301, 302, 303, 307, 308].contains(response.statusCode)) {
+        setState(() {
+          _submitMessage = '发布成功！';
+        });
+
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      } else {
+        setState(() {
+          _submitMessage = '发布失败: 状态码 ${response.statusCode}';
+        });
       }
     } catch (e) {
       setState(() {
         _submitMessage = '发布失败: $e';
       });
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 

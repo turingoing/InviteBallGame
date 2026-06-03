@@ -20,6 +20,35 @@ class _DynamicPageState extends State<DynamicPage> {
   // 异步加载JSON数据后的模型列表
   late Future<List<DynamicModel>> _dynamicListFuture;
 
+  DateTime? _tryParsePostTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is int) {
+      if (value > 1000000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+    }
+    final raw = value.toString().trim().replaceAll('`', '');
+    if (raw.isEmpty) return null;
+    final direct = DateTime.tryParse(raw);
+    if (direct != null) return direct;
+    if (raw.contains(' ')) {
+      final t1 = DateTime.tryParse(raw.replaceFirst(' ', 'T'));
+      if (t1 != null) return t1;
+    }
+    if (raw.contains('/')) {
+      final normalized = raw.replaceAll('/', '-');
+      final t2 = DateTime.tryParse(normalized);
+      if (t2 != null) return t2;
+      if (normalized.contains(' ')) {
+        final t3 = DateTime.tryParse(normalized.replaceFirst(' ', 'T'));
+        if (t3 != null) return t3;
+      }
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +81,7 @@ class _DynamicPageState extends State<DynamicPage> {
           Map<String, Map<String, dynamic>> groupedPosts = {};
 
           for (var item in rawDataList) {
-            String postid = item['postid'] ?? '';
+            String postid = (item['postid'] ?? '').toString();
 
             if (postid.isEmpty) continue;
 
@@ -67,6 +96,17 @@ class _DynamicPageState extends State<DynamicPage> {
                 'create_time': item['create_time'] ?? item['time'] ?? '',
                 'imageUrls': [],
               };
+            }
+
+            final itemCreateTime = item['create_time'] ?? item['time'];
+            if (itemCreateTime != null &&
+                itemCreateTime.toString().trim().isNotEmpty &&
+                (groupedPosts[postid]!['create_time'] == null ||
+                    groupedPosts[postid]!['create_time']
+                        .toString()
+                        .trim()
+                        .isEmpty)) {
+              groupedPosts[postid]!['create_time'] = itemCreateTime;
             }
 
             if (item['username'] != null &&
@@ -101,8 +141,21 @@ class _DynamicPageState extends State<DynamicPage> {
           }
 
           // 将分组后的数据转换为DynamicModel列表
+          final entries = groupedPosts.entries.toList()
+            ..sort((a, b) {
+              final at = _tryParsePostTime(a.value['create_time']);
+              final bt = _tryParsePostTime(b.value['create_time']);
+              if (at != null && bt != null) return bt.compareTo(at);
+              if (at != null && bt == null) return -1;
+              if (at == null && bt != null) return 1;
+              final aId = int.tryParse(a.key) ?? 0;
+              final bId = int.tryParse(b.key) ?? 0;
+              return bId.compareTo(aId);
+            });
+
           List<DynamicModel> dynamicList = [];
-          groupedPosts.forEach((postid, data) {
+          for (final entry in entries) {
+            final data = entry.value;
             String userName = data['username']?.toString().trim() ?? '';
             userName = userName.replaceAll('`', '');
 
@@ -128,7 +181,7 @@ class _DynamicPageState extends State<DynamicPage> {
               isOnline: true, // 默认在线状态
             );
             dynamicList.add(dynamicModel);
-          });
+          }
 
           return dynamicList;
         } else {

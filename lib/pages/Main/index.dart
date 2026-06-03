@@ -24,16 +24,11 @@ class MainTabPage extends StatefulWidget {
 
 class _MainTabPageState extends State<MainTabPage> {
   int _currentBottomIndex = 0;
-  bool _showAutoLoginMessage = false;
   bool? _saveSuccess;
 
   @override
   void initState() {
     super.initState();
-    // 检查是否是自动登录
-    if (widget.autoLogin) {
-      _showAutoLoginMessage = true;
-    }
   }
 
   @override
@@ -46,18 +41,12 @@ class _MainTabPageState extends State<MainTabPage> {
       if (arguments.containsKey('saveSuccess')) {
         _saveSuccess = arguments['saveSuccess'];
       }
-      // 检查是否是自动登录
-      if (arguments.containsKey('autoLogin') && arguments['autoLogin']) {
-        _showAutoLoginMessage = true;
-      }
     }
     
     // 显示消息提示
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_showAutoLoginMessage) {
-        _showMessage('已自动登录');
-      } else if (_saveSuccess != null) {
-        _showMessage(_saveSuccess! ? '登录信息已保存' : '登录信息保存失败');
+      if (_saveSuccess == false) {
+        _showMessage('登录信息保存失败');
       }
     });
   }
@@ -120,7 +109,7 @@ class _MainTabPageState extends State<MainTabPage> {
               },
             items: [
               BottomNavigationBarItem(
-                icon: Image.asset('assets/images/dt/Union(2).png',width: 24,height: 24,),
+                icon: Image.asset('assets/images/dt/Union(2).png',width: 20,height: 20,),
                 activeIcon: Image.asset(
                   'assets/images/dt/Union(2).png',
                   width: 20,
@@ -131,7 +120,7 @@ class _MainTabPageState extends State<MainTabPage> {
                 label: '首页',
               ),
               BottomNavigationBarItem(
-              icon: Image.asset('assets/images/dt/Union(3).png',width: 24,height: 24,),
+              icon: Image.asset('assets/images/dt/Union(3).png',width: 20,height: 20,),
               activeIcon: Image.asset(
                 'assets/images/dt/Union(3).png',
                 width: 20,
@@ -159,7 +148,7 @@ class _MainTabPageState extends State<MainTabPage> {
               icon: Stack(
                 children: [
                   // const Icon(Icons.chat_bubble_outline,color: Colors.black,),
-                  Image.asset('assets/images/dt/Union(4).png',width: 24,height: 24,),
+                  Image.asset('assets/images/dt/Union(4).png',width: 20,height: 20,),
                   Positioned(
                     right: -1,
                     top: -1,
@@ -206,10 +195,10 @@ class _MainTabPageState extends State<MainTabPage> {
               label: '消息',
             ),
               BottomNavigationBarItem(
-                icon: Image.asset('assets/images/dt/Union(5).png',width: 24,height: 24,),
+                icon: Image.asset('assets/images/dt/Union(5).png',width: 20,height: 20,),
                 activeIcon: Image.asset(
                   'assets/images/dt/Union(5).png',
-                  width: 200,
+                  width: 20,
                   height: 20,
                   color: const Color(0xFF0500FA), // 高亮颜色（和 selectedItemColor 一致）
                   colorBlendMode: BlendMode.srcIn, // 保证颜色只应用到图片内容，背景透明

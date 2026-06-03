@@ -13,7 +13,7 @@ class VenueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 4, right: 4, bottom: 1),
+      padding: const EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -91,6 +91,7 @@ class VenueCard extends StatelessWidget {
                   ],
                 ),
                 // 促销信息 + 按钮区域
+                const Spacer(),
                 Row(
                   children: [
                     if (venueData.promotion.isNotEmpty)
@@ -113,6 +114,8 @@ class VenueCard extends StatelessWidget {
                         backgroundColor: venueData.buttonEnabled ? const Color(0xFF0500FA) : Colors.grey[300],
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         minimumSize: const Size(65, 26),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(venueData.buttonText, style: const TextStyle(color: Colors.white, fontSize: 10)),
                     ),

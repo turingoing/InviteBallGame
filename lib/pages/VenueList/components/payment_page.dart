@@ -47,8 +47,8 @@ class _PaymentPageState extends State<PaymentPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('支付成功')),
             );
-            // 支付成功后跳转回对局详情
-            Navigator.of(context).pop();
+            // 支付成功后跳转回，带上成功标识
+            Navigator.of(context).pop(true);
           }
         } else {
           // HTTP 状态码不是 200

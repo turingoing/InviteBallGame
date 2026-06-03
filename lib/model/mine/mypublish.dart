@@ -77,6 +77,38 @@ class PublishActivity {
     }
   }
 
+  // 判断是否超过约球时间24小时
+  bool get isExpired24h {
+    if (date.isEmpty) return false;
+    try {
+      String timeStr = date.replaceAll('/', '-');
+      List<String> timeParts = timeStr.split(' ');
+      if (timeParts.isNotEmpty) {
+        List<String> dateParts = timeParts[0].split('-');
+        if (dateParts.length == 3) {
+          String y = dateParts[0];
+          String m = dateParts[1].padLeft(2, '0');
+          String d = dateParts[2].padLeft(2, '0');
+          
+          String h = '00', min = '00', sec = '00';
+          if (timeParts.length >= 2) {
+            List<String> clockParts = timeParts[1].split(':');
+            h = clockParts.isNotEmpty ? clockParts[0].padLeft(2, '0') : '00';
+            min = clockParts.length > 1 ? clockParts[1].padLeft(2, '0') : '00';
+            sec = clockParts.length > 2 ? clockParts[2].padLeft(2, '0') : '00';
+          }
+          
+          DateTime parsedTime = DateTime.parse('$y-$m-$d $h:$min:$sec');
+          // 判断当前时间是否大于约定时间 + 24小时
+          return DateTime.now().isAfter(parsedTime.add(const Duration(hours: 24)));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return false;
+  }
+
   // JSON 转 Model
   factory PublishActivity.fromJson(Map<String, dynamic> json) {
     int? parseParticipantCount() {

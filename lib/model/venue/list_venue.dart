@@ -7,6 +7,7 @@ class BallReservationItem {
   final Color tagColor; // 保留你要的 Color 类型
   final double score;
   final String location;
+  final String area;
   final String time;
   final int lackCount;
   final int joinedCount;
@@ -16,6 +17,7 @@ class BallReservationItem {
   final String gameType; // 约球类型
   final String note; // 备注
   final String inviteId; // 约球ID
+  final bool isExpired; // 是否已截止
 
   BallReservationItem({
     required this.avatarUrl,
@@ -24,6 +26,7 @@ class BallReservationItem {
     required this.tagColor,
     required this.score,
     required this.location,
+    required this.area,
     required this.time,
     required this.lackCount,
     required this.joinedCount,
@@ -33,6 +36,7 @@ class BallReservationItem {
     this.gameType = '中式八球',
     this.note = '',
     this.inviteId = '',
+    this.isExpired = false,
   });
 
   // JSON → Model 自动解析（颜色自动转）
@@ -44,6 +48,7 @@ class BallReservationItem {
       tagColor: _getColorFromHex(json['tagColor'] ?? '#FF3B30'),
       score: (json['score'] ?? 0.0).toDouble(),
       location: json['location'] ?? '',
+      area: json['area'] ?? '',
       time: json['time'] ?? '',
       lackCount: json['lackCount'] ?? 0,
       joinedCount: json['joinedCount'] ?? 0,
@@ -53,6 +58,7 @@ class BallReservationItem {
       gameType: json['gameType'] ?? '中式八球',
       note: json['note'] ?? '',
       inviteId: json['inviteId'] ?? '',
+      isExpired: json['isExpired'] ?? false,
     );
   }
 

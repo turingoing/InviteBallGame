@@ -89,13 +89,13 @@ class _SurroundingsPageState extends State<SurroundingsPage> {
                 // 3. 数据加载成功，渲染列表
                 final venueList = snapshot.data!;
                 return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 12),
                   children: [
                     // 遍历场馆列表生成卡片
                     ...venueList.map((venue) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: VenueCard(venueData: venue),
-                    )).toList(),
+                    )),
                     // 底部提示文字
                     const Center(child: Text('没有更多商家了', style: TextStyle(color: Colors.grey))),
                   ],

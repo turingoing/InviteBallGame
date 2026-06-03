@@ -25,7 +25,10 @@ class CommentItem {
 // 约球详情数据模型
 class MatchDetailData {
   final String userid;
+  final String username;
+  final String headimg;
   final String location;
+  final String area;
   final String note;
   final String time;
   final String participantcount;
@@ -33,11 +36,16 @@ class MatchDetailData {
   final String gametype;
   final String feemode;
   final String inviteid;
-  final int invitednum;
+  final String selllevel;
+  final String creditscore;
+  final int joinednum;
 
   MatchDetailData({
     required this.userid,
+    required this.username,
+    required this.headimg,
     required this.location,
+    required this.area,
     required this.note,
     required this.time,
     required this.participantcount,
@@ -45,21 +53,57 @@ class MatchDetailData {
     required this.gametype,
     required this.feemode,
     required this.inviteid,
-    required this.invitednum,
+    required this.selllevel,
+    required this.creditscore,
+    required this.joinednum,
   });
 
   factory MatchDetailData.fromJson(Map<String, dynamic> json) {
+    final dynamic joinedRaw = json['joinednum'] ?? json['invitednum'];
+    final int joinedNum = joinedRaw is int ? joinedRaw : int.tryParse(joinedRaw?.toString() ?? '0') ?? 0;
     return MatchDetailData(
-      userid: json['userid'] ?? '',
-      location: json['location'] ?? '',
-      note: json['note'] ?? '',
-      time: json['time'] ?? '',
-      participantcount: json['participantcount'] ?? '',
-      skilllevel: json['skilllevel'] ?? '',
-      gametype: json['gametype'] ?? '',
-      feemode: json['feemode'] ?? '',
-      inviteid: json['inviteid'] ?? '',
-      invitednum: json['invitednum'] is int ? json['invitednum'] : int.tryParse(json['invitednum']?.toString() ?? '0') ?? 0,
+      userid: (json['userid'] ?? '').toString(),
+      username: (json['username'] ?? '').toString().trim().replaceAll('`', ''),
+      headimg: (json['headimg'] ?? '').toString().trim().replaceAll('`', ''),
+      location: (json['location'] ?? '').toString(),
+      area: (json['area'] ?? '').toString().trim().replaceAll('`', ''),
+      note: (json['note'] ?? '').toString(),
+      time: (json['time'] ?? '').toString(),
+      participantcount: (json['participantcount'] ?? '').toString(),
+      skilllevel: (json['skilllevel'] ?? '').toString(),
+      gametype: (json['gametype'] ?? '').toString(),
+      feemode: (json['feemode'] ?? '').toString(),
+      inviteid: (json['inviteid'] ?? '').toString(),
+      selllevel: (json['selllevel'] ?? '').toString().trim(),
+      creditscore: (json['creditscore'] ?? '').toString().trim(),
+      joinednum: joinedNum,
+    );
+  }
+}
+
+class ParticipantUser {
+  final String userid;
+  final String username;
+  final String headimg;
+
+  ParticipantUser({
+    required this.userid,
+    required this.username,
+    required this.headimg,
+  });
+
+  factory ParticipantUser.fromJson(Map<String, dynamic> json) {
+    String headimgValue = '';
+    for (final entry in json.entries) {
+      if (entry.key.toLowerCase().contains('headimg')) {
+        headimgValue = (entry.value ?? '').toString();
+        break;
+      }
+    }
+    return ParticipantUser(
+      userid: (json['userid'] ?? '').toString(),
+      username: (json['username'] ?? '').toString().trim().replaceAll('`', ''),
+      headimg: headimgValue.trim().replaceAll('`', ''),
     );
   }
 }
@@ -79,6 +123,9 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   bool _isLoading = true;
   String? _errorMessage;
 
+  List<ParticipantUser> _joinedUsers = [];
+  bool _isJoinedUsersLoading = false;
+
   // 列表数据
   // List<CommentItem> _commentList = [];
 
@@ -86,7 +133,8 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   @override
   void initState() {
     super.initState();
-    _loadMatchData(); // 页面一打开就加载JSON
+    _loadMatchData();
+    _loadJoinedUsers();
   }
 
   // 获取约球详情数据
@@ -101,7 +149,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       String? itsid = await DataStorage.loadItsid();
       
       // 构建API请求URL
-      String baseUrl = 'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=06&itcid=11804&inviteid=${widget.inviteid}';//读端口
+      String baseUrl = 'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=09&itcid=11809&inviteid=${widget.inviteid}';
       if (itsid != null && itsid.isNotEmpty) {
         baseUrl += '&itsid=$itsid';
       }
@@ -132,6 +180,130 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  String _avatarUrlFromHeadimg(String headimg) {
+    final cleaned = headimg.trim().replaceAll('`', '');
+    if (cleaned.isEmpty) return '';
+    return 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$cleaned';
+  }
+
+  Widget _buildLoadingPlaceholder({
+    double? width,
+    double? height,
+    bool isAvatar = false,
+  }) {
+    final placeholder = Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        shape: isAvatar ? BoxShape.circle : BoxShape.rectangle,
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+    return placeholder;
+  }
+
+  Widget _buildAvatarErrorPlaceholder(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.person, color: Colors.grey),
+    );
+  }
+
+  Widget _buildNetworkAvatar({
+    required double size,
+    required String imageUrl,
+  }) {
+    if (imageUrl.trim().isEmpty) {
+      return _buildAvatarErrorPlaceholder(size);
+    }
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipOval(
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return _buildLoadingPlaceholder(width: size, height: size, isAvatar: true);
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildAvatarErrorPlaceholder(size);
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadJoinedUsers() async {
+    setState(() {
+      _isJoinedUsersLoading = true;
+    });
+
+    try {
+      String? itsid = await DataStorage.loadItsid();
+
+      String baseUrl = 'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11810&inviteid=${widget.inviteid}';
+      if (itsid != null && itsid.isNotEmpty) {
+        baseUrl += '&itsid=$itsid';
+      }
+      final url = Uri.parse(baseUrl);
+      print('请求已加入成员URL: $url');
+
+      final response = await http.get(url);
+      print('已加入成员响应状态码: ${response.statusCode}');
+      print('已加入成员响应内容: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('请求失败，状态码: ${response.statusCode}');
+      }
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (responseData['code']?.toString() == '0' && responseData['data'] is List) {
+        final rawList = (responseData['data'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+        if (mounted) {
+          setState(() {
+            _joinedUsers = rawList.map(ParticipantUser.fromJson).toList();
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _joinedUsers = [];
+          });
+        }
+      }
+    } catch (e) {
+      print('加载已加入成员失败: $e');
+      if (mounted) {
+        setState(() {
+          _joinedUsers = [];
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isJoinedUsersLoading = false;
+        });
+      }
     }
   }
 
@@ -191,7 +363,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -266,6 +438,14 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
 
   // 用户信息区域
   Widget _buildUserInfoSection() {
+    final avatarUrl = _avatarUrlFromHeadimg(_matchData?.headimg ?? '');
+    final sellLevel = (_matchData?.selllevel ?? '').trim();
+    final userName = (_matchData?.username ?? '').trim().isNotEmpty
+        ? (_matchData?.username ?? '')
+        : ((_matchData?.userid ?? '').trim().isNotEmpty ? '用户${_matchData?.userid}' : '用户');
+    final creditscore = (_matchData?.creditscore ?? '').trim();
+    final skilllevel = (_matchData?.skilllevel ?? '').trim();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -277,10 +457,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              const CircleAvatar(
-                radius: 50,
-                backgroundImage: NetworkImage('https://picsum.photos/200/200?random=user'),
-              ),
+              _buildNetworkAvatar(size: 100, imageUrl: avatarUrl),
               Positioned(
                 right: 0,
                 bottom: 0,
@@ -290,9 +467,9 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                     color: const Color(0xFF0033FF),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'V5',
-                    style: TextStyle(
+                  child: Text(
+                    'V${sellLevel.isEmpty ? '0' : sellLevel}',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -308,7 +485,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _matchData?.userid ?? '用户ID',
+                userName,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -322,9 +499,9 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                   color: const Color(0xFFE8E5FF),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  '黑桃♠8',
-                  style: TextStyle(
+                child: Text(
+                  skilllevel.isEmpty ? '球技等级' : '球技Lv$skilllevel',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF5856D6),
                     fontWeight: FontWeight.w500,
@@ -340,21 +517,23 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
             children: [
               const Icon(Icons.star, color: Color(0xFFFF9500), size: 16),
               const SizedBox(width: 4),
-              const Text(
-                '球品评分: 98',
-                style: TextStyle(
+              Text(
+                creditscore.isEmpty ? '信用分: -' : '信用分: $creditscore',
+                style: const TextStyle(
                   fontSize: 16,
                   color: Color(0xFF666666),
                 ),
               ),
-              const SizedBox(width: 24),
-              const Text(
-                '胜率: 64%',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF666666),
+              if ((_matchData?.userid ?? '').isNotEmpty) ...[
+                const SizedBox(width: 24),
+                Text(
+                  'ID: ${_matchData?.userid}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF666666),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -413,6 +592,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
 
   // 对局标题与标签
   Widget _buildMatchTitleSection() {
+    final title = (_matchData?.location ?? '').toString().trim().isNotEmpty ? (_matchData?.location ?? '') : '对局信息';
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -422,9 +602,9 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '周末斯诺克切磋 (Example)',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black,
@@ -487,7 +667,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
             icon: Icons.location_on,
             iconColor: const Color(0xFF0033FF),
             title: _matchData?.location ?? '地点待定',
-            subtitle: '点击查看地图',
+            subtitle: ((_matchData?.area ?? '').trim().isNotEmpty) ? '地区: ${_matchData?.area}' : '点击查看地图',
             hasArrow: true,
           ),
           const SizedBox(height: 16),
@@ -559,8 +739,21 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   Widget _buildMemberRow() {
     // 计算缺人数
     int participantCount = int.tryParse(_matchData?.participantcount ?? '0') ?? 0;
-    int invitedNum = _matchData?.invitednum ?? 0;
-    int missingCount = participantCount - invitedNum;
+    int joinedNum = _matchData?.joinednum ?? 0;
+    if (participantCount < 0) participantCount = 0;
+    if (joinedNum < 0) joinedNum = 0;
+    
+    // 不限制 joinedNum 上限，因为有可能加入人数大于等于参与人数
+    int missingCount = participantCount - joinedNum;
+    String statusText = '';
+    if (missingCount <= 0) {
+      statusText = '已满人  (已加入: $joinedNum/$participantCount)';
+    } else {
+      statusText = '缺 $missingCount 人  (已加入: $joinedNum/$participantCount)';
+    }
+    
+    // 用来渲染头像的 itemCount，至少显示 participantCount 个，若 joinedNum 更多则显示 joinedNum 个
+    int avatarItemCount = participantCount > joinedNum ? participantCount : joinedNum;
     
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +762,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFF0033FF).withOpacity(0.1),
+            color: const Color(0xFF0033FF).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.people, color: Color(0xFF0033FF), size: 20),
@@ -580,7 +773,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '缺 $missingCount 人  (已加入: $invitedNum/$participantCount)',
+                statusText,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -593,17 +786,25 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                 height: 40,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: participantCount,
+                  itemCount: avatarItemCount,
                   itemBuilder: (context, index) {
-                    if (index < invitedNum) {
+                    if (index < joinedNum) {
+                      if (_isJoinedUsersLoading) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: _buildLoadingPlaceholder(width: 40, height: 40, isAvatar: true),
+                        );
+                      }
+                      if (index < _joinedUsers.length) {
+                        final url = _avatarUrlFromHeadimg(_joinedUsers[index].headimg);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: _buildNetworkAvatar(size: 40, imageUrl: url),
+                        );
+                      }
                       return Padding(
                         padding: const EdgeInsets.only(right: 4),
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundImage: NetworkImage(
-                            'https://picsum.photos/200/200?random=$index',
-                          ),
-                        ),
+                        child: _buildAvatarErrorPlaceholder(40),
                       );
                     } else {
                       return Padding(
@@ -867,8 +1068,10 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   // 底部立即加入按钮
   Widget _buildBottomButton() {
     int participantCount = int.tryParse(_matchData?.participantcount ?? '0') ?? 0;
-    int invitedNum = _matchData?.invitednum ?? 0;
+    int joinedNum = _matchData?.joinednum ?? 0;
     
+    bool isFull = joinedNum >= participantCount;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -882,9 +1085,9 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _joinMatch(),
+        onPressed: isFull ? null : () => _joinMatch(),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF0033FF),
+          backgroundColor: isFull ? Colors.grey : const Color(0xFF0033FF),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
@@ -892,7 +1095,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
         child: Text(
-          '立即加入 ($invitedNum/$participantCount)',
+          isFull ? '已满人 ($joinedNum/$participantCount)' : '立即加入 ($joinedNum/$participantCount)',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -924,31 +1127,16 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       // 显示消息提示
       _showMessage(message);
 
-      // 如果加入成功（code为"0"），更新页面数据并跳转到支付页面
+      // 如果加入成功（code为"0"），更新页面数据并显示成功提示
       if (code == '0') {
-        setState(() {
-          if (_matchData != null) {
-            _matchData = MatchDetailData(
-              userid: _matchData!.userid,
-              location: _matchData!.location,
-              note: _matchData!.note,
-              time: _matchData!.time,
-              participantcount: _matchData!.participantcount,
-              skilllevel: _matchData!.skilllevel,
-              gametype: _matchData!.gametype,
-              feemode: _matchData!.feemode,
-              inviteid: _matchData!.inviteid,
-              invitednum: _matchData!.invitednum + 1,
-            );
-          }
-        });
-
-        // 跳转到支付页面
+        _loadJoinedUsers();
+        
         if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PaymentPage(inviteid: widget.inviteid)),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('待发起人同意'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       }
