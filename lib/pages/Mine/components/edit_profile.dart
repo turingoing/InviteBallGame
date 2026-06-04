@@ -188,7 +188,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       final updateUri = Uri.parse(_uploadUrl).replace(queryParameters: {
         'ituid': _ituid,
-        'mbid': '11808', // 修改为 11808
+        'mbid': '11809', // 修改为 11809
         if (itsid != null && itsid.isNotEmpty) 'itsid': itsid,
       });
 
@@ -408,9 +408,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     if (isSelected) {
                       _selectedTags.remove(tag);
                     } else {
-                      if (_selectedTags.length >= 5) {
+                      if (_selectedTags.length >= 4) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('最多只能选择5个标签')),
+                          const SnackBar(content: Text('最多只能选择4个标签')),
                         );
                         return;
                       }
@@ -688,6 +688,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   TextField(
                     controller: _bioController,
                     maxLines: 3,
+                    maxLength: 20,
                     onChanged: (val) {
                       if (val.trim().isNotEmpty) {
                         setState(() => _invalidFields.remove('introduction'));
@@ -698,6 +699,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       hintStyle: TextStyle(color: Color(0xFF999999)),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
+                      counterText: "", // 隐藏默认的计数器，如果需要显示可以去掉这行
                     ),
                     style: const TextStyle(fontSize: 14, color: Colors.black),
                   ),

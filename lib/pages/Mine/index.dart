@@ -61,12 +61,12 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
 
   // 用户核心数据
-  String _userName = '台球爱好者小张';
-  String _userId = 'ID: 8829103';
-  String _location = '上海';
-  String _creditScore = '98';
-  String _levelTag = '实力达人';
-  String _avatarUrl = 'https://picsum.photos/200/200?random=user';
+  String _userName = '    ';
+  String _userId = 'ID:   ';
+  String _location = '  ';
+  String _creditScore = ' ';
+  String _levelTag = '    ';
+  String _avatarUrl = 'assets/images/zb/AppShow.png';
   
   // 会员及身份标识
   String _userType = '0'; // 0:非会员, 1:会员
