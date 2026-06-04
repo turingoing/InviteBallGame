@@ -1,16 +1,73 @@
-# flutter_application_1
+# 台球搭子 (Billiard Buddy)
 
-A new Flutter project.
+这是一个基于 Flutter 开发的移动应用程序，旨在为台球爱好者提供一个寻找球友、参加比赛以及管理台球活动的平台。
 
-## Getting Started
+## 🚀 项目简介
 
-This project is a starting point for a Flutter application.
+“台球搭子” 提供了完整的约球闭环体验：从发布约球信息、成员申请加入、发起人审批，到最后的现场扫码核销。
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ 核心功能
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **约球广场**：浏览附近的约球动态和场馆推荐。
+- **活动发布**：支持发布不同类型的台球活动（如：斯诺克、中式八球等），设置费用模式和球技要求。
+- **成员管理**：发布者可以查看申请列表，进行“同意”或“拒绝”操作。
+- **核销系统**：
+  - **二维码生成**：用户到场后可出示核销二维码。
+  - **扫一扫**：商家或发布者通过扫码完成活动核销，触发保证金退还等逻辑。
+- **个人中心**：管理“我的发布”、“我的参与”，支持个人资料编辑。
+- **身份验证**：完整的登录、注册及找回密码流程。
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ 技术栈
+
+- **框架**: [Flutter](https://flutter.dev/) (Dart)
+- **网络请求**: `http`
+- **数据持久化**: `shared_preferences`
+- **扫码插件**: `mobile_scanner`
+- **二维码生成**: `qr_flutter`
+- **模型序列化**: `json_annotation`, `json_serializable`
+- **资源管理**: 自定义字体 (AlibabaPuHuiTi) 和多分辨率图片素材
+
+## 📂 项目结构
+
+```text
+lib/
+├── api/          # 接口请求封装
+├── model/        # 数据模型定义
+├── pages/        # 各功能模块页面
+│   ├── Add/      # 发布约球相关
+│   ├── Auth/     # 登录注册相关
+│   ├── Main/     # 首页、动态
+│   ├── Message/  # 消息中心
+│   ├── Mine/     # 个人中心及核销组件
+│   └── VenueList/# 场馆与赛事详情
+├── routes/       # 路由配置
+├── utils/        # 工具类 (存储、网络、颜色扩展)
+└── widgets/      # 通用 UI 组件
+```
+
+## 📦 安装与运行
+
+1. **克隆项目**
+   ```bash
+   git clone [repository-url]
+   ```
+
+2. **安装依赖**
+   ```bash
+   flutter pub get
+   ```
+
+3. **运行项目**
+   ```bash
+   flutter run
+   ```
+
+## 📱 权限说明
+
+- **摄像头权限**: 用于“扫一扫”功能进行核销。
+- **网络权限**: 用于获取活动数据和进行身份验证。
+- **相册权限**: 用于上传个人头像。
+
+---
+
+*本项目作为台球约球平台的客户端实现，提供了现代化的 UI 交互和流畅的使用体验。*
