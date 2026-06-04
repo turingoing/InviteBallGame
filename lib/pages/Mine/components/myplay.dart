@@ -75,8 +75,9 @@ class PlayActivityData {
     }
   }
 
-  bool get isExpired {
-    if (time.isEmpty) return false;
+  // 获取解析后的时间对象
+  DateTime? get parsedDate {
+    if (time.isEmpty) return null;
     try {
       String timeStr = time.replaceAll('/', '-');
       List<String> timeParts = timeStr.split(' ');
@@ -95,14 +96,19 @@ class PlayActivityData {
             sec = clockParts.length > 2 ? clockParts[2].padLeft(2, '0') : '00';
           }
           
-          DateTime parsedTime = DateTime.parse('$y-$m-$d $h:$min:$sec');
-          return DateTime.now().isAfter(parsedTime);
+          return DateTime.parse('$y-$m-$d $h:$min:$sec');
         }
       }
     } catch (e) {
       // ignore
     }
-    return false;
+    return null;
+  }
+
+  bool get isExpired {
+    final parsed = parsedDate;
+    if (parsed == null) return false;
+    return DateTime.now().isAfter(parsed);
   }
 }
 
@@ -155,6 +161,7 @@ class _MyPlayPageState extends State<MyPlayPage> {
 
         setState(() {
           activityList = listData.map((item) => PlayActivityData.fromJson(item)).toList();
+          _sortActivities();
           _isLoading = false;
         });
       } else {
@@ -173,6 +180,36 @@ class _MyPlayPageState extends State<MyPlayPage> {
 
   Future<void> _refreshData() async {
     await _loadPlayData();
+  }
+
+  void _sortActivities() {
+    if (activityList.isEmpty) return;
+
+    final now = DateTime.now();
+    activityList.sort((a, b) {
+      final dateA = a.parsedDate;
+      final dateB = b.parsedDate;
+
+      // 如果日期解析失败，放在最后
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+
+      bool isFutureA = dateA.isAfter(now);
+      bool isFutureB = dateB.isAfter(now);
+
+      if (isFutureA && !isFutureB) {
+        return -1; // A在将来，B在过去，A排前面
+      } else if (!isFutureA && isFutureB) {
+        return 1; // A在过去，B在将来，B排前面
+      } else if (isFutureA && isFutureB) {
+        // 都在将来：越接近现在的排在越前面（升序）
+        return dateA.compareTo(dateB);
+      } else {
+        // 都在过去：越接近现在的排在越前面（降序）
+        return dateB.compareTo(dateA);
+      }
+    });
   }
 
   @override

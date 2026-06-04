@@ -77,9 +77,9 @@ class PublishActivity {
     }
   }
 
-  // 判断是否超过约球时间24小时
-  bool get isExpired24h {
-    if (date.isEmpty) return false;
+  // 获取解析后的时间对象
+  DateTime? get parsedDate {
+    if (date.isEmpty) return null;
     try {
       String timeStr = date.replaceAll('/', '-');
       List<String> timeParts = timeStr.split(' ');
@@ -98,15 +98,21 @@ class PublishActivity {
             sec = clockParts.length > 2 ? clockParts[2].padLeft(2, '0') : '00';
           }
           
-          DateTime parsedTime = DateTime.parse('$y-$m-$d $h:$min:$sec');
-          // 判断当前时间是否大于约定时间 + 24小时
-          return DateTime.now().isAfter(parsedTime.add(const Duration(hours: 24)));
+          return DateTime.parse('$y-$m-$d $h:$min:$sec');
         }
       }
     } catch (e) {
       // ignore
     }
-    return false;
+    return null;
+  }
+
+  // 判断是否超过约球时间24小时
+  bool get isExpired24h {
+    final parsed = parsedDate;
+    if (parsed == null) return false;
+    // 判断当前时间是否大于约定时间 + 24小时
+    return DateTime.now().isAfter(parsed.add(const Duration(hours: 24)));
   }
 
   // JSON 转 Model

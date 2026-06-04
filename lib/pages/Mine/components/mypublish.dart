@@ -43,6 +43,7 @@ class _MyPublishPageState extends State<MyPublishPage> {
       
       setState(() {
         activityList = data.map((item) => PublishActivity.fromJson(item)).toList();
+        _sortActivities();
       });
       
     } catch (e) {
@@ -67,6 +68,7 @@ class _MyPublishPageState extends State<MyPublishPage> {
         print('✅ 从本地缓存读取成功');
         setState(() {
           activityList = localData.map((item) => PublishActivity.fromJson(item)).toList();
+          _sortActivities();
         });
       } else {
         loadMockData();
@@ -114,6 +116,40 @@ class _MyPublishPageState extends State<MyPublishPage> {
           inviteid: '3',
         ),
       ];
+      _sortActivities();
+    });
+  }
+
+  // 排序逻辑：
+  // 1. 未开始的约球（时间 > 当前时间）排在前面，且越接近当前时间的排在越前面。
+  // 2. 已结束的约球（时间 <= 当前时间）排在后面，且越接近当前时间的排在越前面。
+  void _sortActivities() {
+    if (activityList.isEmpty) return;
+    
+    final now = DateTime.now();
+    activityList.sort((a, b) {
+      final dateA = a.parsedDate;
+      final dateB = b.parsedDate;
+      
+      // 如果日期解析失败，放在最后
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+      
+      bool isFutureA = dateA.isAfter(now);
+      bool isFutureB = dateB.isAfter(now);
+      
+      if (isFutureA && !isFutureB) {
+        return -1; // A在将来，B在过去，A排前面
+      } else if (!isFutureA && isFutureB) {
+        return 1;  // A在过去，B在将来，B排前面
+      } else if (isFutureA && isFutureB) {
+        // 都在将来：越接近现在的排在越前面（升序）
+        return dateA.compareTo(dateB);
+      } else {
+        // 都在过去：越接近现在的排在越前面（降序）
+        return dateB.compareTo(dateA);
+      }
     });
   }
 
