@@ -6,10 +6,24 @@ import '../pages/photo_viewer_page.dart'; // 导入图片查看器页面
 // 通用动态卡片组件（支持自定义内容）
 class DynamicCard extends StatefulWidget {
   final DynamicModel dynamicData; // 传入的动态数据模型
+  final VoidCallback? onTap; // 点击卡片回调
+  final bool showLikeAction; // 是否允许点赞操作，默认 true
+  final VoidCallback? onLikeTap; // 自定义点赞回调
+  final bool? isLiked; // 外部控制的点赞状态
+  final bool showCollectAction; // 是否允许收藏操作，默认 true
+  final VoidCallback? onCollectTap; // 自定义收藏回调
+  final bool? isCollected; // 外部控制的收藏状态
 
   const DynamicCard({
     super.key,
     required this.dynamicData, // 必须传入的动态数据
+    this.onTap,
+    this.showLikeAction = true,
+    this.onLikeTap,
+    this.isLiked,
+    this.showCollectAction = true,
+    this.onCollectTap,
+    this.isCollected,
   });
 
   @override
@@ -25,8 +39,25 @@ class _DynamicCardState extends State<DynamicCard> {
   @override
   void initState() {
     super.initState();
+    isLiked = widget.isLiked ?? false;
+    isCollected = widget.isCollected ?? false;
     likeCount = widget.dynamicData.likeCount;
     collectCount = widget.dynamicData.collectCount;
+  }
+
+  @override
+  void didUpdateWidget(DynamicCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLiked != null && widget.isLiked != oldWidget.isLiked) {
+      setState(() {
+        isLiked = widget.isLiked!;
+      });
+    }
+    if (widget.isCollected != null && widget.isCollected != oldWidget.isCollected) {
+      setState(() {
+        isCollected = widget.isCollected!;
+      });
+    }
   }
 
   void toggleLike() {
@@ -194,154 +225,168 @@ class _DynamicCardState extends State<DynamicCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 0, left: 0, bottom: 1, top: 0),
-      padding: const EdgeInsets.only(right: 16, left: 16, top: 8, bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        // borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. 头部：头像 + 用户名 + 位置
-          Row(
-            children: [
-              // 头像（自定义URL + 在线状态）
-              Stack(children: [_buildAvatar()]),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 用户名（自定义）
-                  Text(
-                    widget.dynamicData.userName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  // 地理位置（自定义）
-                  Row(
-                    children: [
-                      if (widget.dynamicData.iconUrl != null)
-                        Image.asset(
-                          widget.dynamicData.iconUrl!,
-                          height: 15,
-                          width: 45,
-                        ),
-
-                      const SizedBox(width: 12),
-
-                      Text(
-                        widget.dynamicData.location,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(right: 0, left: 0, bottom: 1, top: 0),
+        padding: const EdgeInsets.only(right: 16, left: 16, top: 8, bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          // borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. 头部：头像 + 用户名 + 位置
+            Row(
+              children: [
+                // 头像（自定义URL + 在线状态）
+                Stack(children: [_buildAvatar()]),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 用户名（自定义）
+                    Text(
+                      widget.dynamicData.userName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 2. 动态文本内容（自定义）
-          Text(
-            widget.dynamicData.content,
-            style: const TextStyle(fontSize: 16, height: 1.5),
-          ),
-          const SizedBox(height: 10),
-
-          // 3. 图片内容
-          Container(
-            alignment: Alignment.centerLeft,
-            child: widget.dynamicData.imageUrls.length == 1
-                ? GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PhotoViewerPage(
-                            imageUrls: widget.dynamicData.imageUrls,
-                            initialIndex: 0,
+                    ),
+                    if (widget.dynamicData.createTime.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          widget.dynamicData.createTime,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 11,
                           ),
                         ),
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final imgPath =
-                              widget.dynamicData.imageUrls.first; //获得图片地址
-                          final imageWidth = constraints.maxWidth < 250
-                              ? constraints.maxWidth
-                              : 250.0;
-                          final imageHeight = imageWidth * 0.6;
-
-                          return _buildNetworkOrAssetImage(
-                            imgPath,
-                            width: imageWidth,
-                            height: imageHeight,
-                            alignment: Alignment.center,
-                          );
-                        },
                       ),
+                    const SizedBox(height: 3),
+                    // 地理位置（自定义）
+                    Row(
+                      children: [
+                        if (widget.dynamicData.iconUrl != null)
+                          Image.asset(
+                            widget.dynamicData.iconUrl!,
+                            height: 15,
+                            width: 45,
+                          ),
+                        const SizedBox(width: 12),
+                        Text(
+                          widget.dynamicData.location,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                : GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 4,
-                    mainAxisSpacing: 4,
-                    children: widget.dynamicData.imageUrls.asMap().entries.map((
-                      entry,
-                    ) {
-                      final index = entry.key;
-                      final url = entry.value;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PhotoViewerPage(
-                                imageUrls: widget.dynamicData.imageUrls,
-                                initialIndex: index,
-                              ),
+                  ],
+                ),
+                const Spacer(),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // 2. 动态文本内容（自定义）
+            Text(
+              widget.dynamicData.content,
+              style: const TextStyle(fontSize: 16, height: 1.5),
+            ),
+            const SizedBox(height: 10),
+
+            // 3. 图片内容
+            Container(
+              alignment: Alignment.centerLeft,
+              child: widget.dynamicData.imageUrls.length == 1
+                  ? GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PhotoViewerPage(
+                              imageUrls: widget.dynamicData.imageUrls,
+                              initialIndex: 0,
                             ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final imageSize = constraints.maxWidth;
-                              return _buildNetworkOrAssetImage(
-                                url,
-                                width: imageSize,
-                                height: imageSize,
-                                alignment: Alignment.center,
-                              );
-                            },
                           ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final imgPath =
+                                widget.dynamicData.imageUrls.first; //获得图片地址
+                            final imageWidth = constraints.maxWidth < 250
+                                ? constraints.maxWidth
+                                : 250.0;
+                            final imageHeight = imageWidth * 0.6;
+
+                            return _buildNetworkOrAssetImage(
+                              imgPath,
+                              width: imageWidth,
+                              height: imageHeight,
+                              alignment: Alignment.center,
+                            );
+                          },
                         ),
-                      );
-                    }).toList(),
-                  ),
-          ),
-          const SizedBox(height: 10),
-          // 4. 互动栏（自定义数字）
-          Row(
-            children: [
-              Expanded(
+                      ),
+                    )
+                  : GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 4,
+                      mainAxisSpacing: 4,
+                      children: widget.dynamicData.imageUrls.asMap().entries.map((
+                        entry,
+                      ) {
+                        final index = entry.key;
+                        final url = entry.value;
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PhotoViewerPage(
+                                  imageUrls: widget.dynamicData.imageUrls,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final imageSize = constraints.maxWidth;
+                                return _buildNetworkOrAssetImage(
+                                  url,
+                                  width: imageSize,
+                                  height: imageSize,
+                                  alignment: Alignment.center,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+            const SizedBox(height: 10),
+            // 4. 互动栏（自定义数字）
+            Row(
+              children: [
+                Expanded(
                 flex: 1,
                 child: GestureDetector(
-                  onTap: toggleLike,
+                  onTap: widget.showLikeAction
+                      ? (widget.onLikeTap ?? toggleLike)
+                      : null,
                   child: Row(
                     children: [
                       Image.asset(
@@ -364,67 +409,70 @@ class _DynamicCardState extends State<DynamicCard> {
                   ),
                 ),
               ),
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/zb/消息圆.png',
-                      width: 20,
-                      height: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.dynamicData.commentCount > 0
-                          ? '${widget.dynamicData.commentCount}'
-                          : '评论',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: GestureDetector(
-                  onTap: toggleCollect,
+                Expanded(
+                  flex: 1,
                   child: Row(
                     children: [
                       Image.asset(
-                        'assets/images/zb/收藏3.png',
-                        width: 22,
-                        height: 22,
-                        color: isCollected ? Colors.red : null,
+                        'assets/images/zb/消息圆.png',
+                        width: 20,
+                        height: 20,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        collectCount > 0 ? '$collectCount' : '收藏',
-                        style: TextStyle(
-                          color: isCollected ? Colors.red : Colors.grey,
-                          fontSize: 12,
-                        ),
+                        widget.dynamicData.commentCount > 0
+                            ? '${widget.dynamicData.commentCount}'
+                            : '评论',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/zb/转发1.png',
-                    width: 22,
-                    height: 22,
+                Expanded(
+                  flex: 1,
+                  child: GestureDetector(
+                    onTap: widget.showCollectAction
+                        ? (widget.onCollectTap ?? toggleCollect)
+                        : null,
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/zb/收藏3.png',
+                          width: 22,
+                          height: 22,
+                          color: isCollected ? Colors.red : null,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          collectCount > 0 ? '$collectCount' : '收藏',
+                          style: TextStyle(
+                            color: isCollected ? Colors.red : Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '转发',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/zb/转发1.png',
+                      width: 22,
+                      height: 22,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      '转发',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

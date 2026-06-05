@@ -10,6 +10,8 @@ class DynamicModel {
   final int collectCount; // 收藏数
   final int commentCount; // 评论数
   final bool isOnline; // 是否在线（头像右下角绿点）
+  final String createTime; // 发布时间
+  final String postid; // 帖子ID
 
   // 构造函数，支持可选参数+默认值
   DynamicModel({
@@ -23,6 +25,8 @@ class DynamicModel {
     this.collectCount = 0,
     this.commentCount = 0,
     this.isOnline = true,
+    this.createTime = '',
+    this.postid = '',
   });
 
   // 核心：新增从JSON Map解析成模型的方法（关键！）
@@ -38,6 +42,8 @@ class DynamicModel {
       collectCount: json['collectCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,
       isOnline: json['isOnline'] ?? true,
+      createTime: json['createTime'] ?? "",
+      postid: json['postid'] ?? "",
     );
   }
 }

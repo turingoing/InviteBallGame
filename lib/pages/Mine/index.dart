@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/pages/Mine/components/member.dart';
 import 'package:flutter_application_1/pages/Mine/components/myplay.dart';
 import 'package:flutter_application_1/pages/Mine/components/mypublish.dart';
+import 'package:flutter_application_1/pages/Mine/components/my_dynamic.dart';
 import 'package:flutter_application_1/pages/Mine/components/edit_profile.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
 import 'package:flutter_application_1/pages/Auth/login.dart';
@@ -545,25 +546,36 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: _statsList.map((item) {
-            return Column(
-              children: [
-                Text(
-                  item['value']!,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            return InkWell(
+              onTap: () {
+                if (item['label'] == '动态') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const MyDynamicPage()),
+                  );
+                }
+              },
+              child: Column(
+                children: [
+                  Text(
+                    item['value']!,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item['label']!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF666666),
+                  const SizedBox(height: 4),
+                  Text(
+                    item['label']!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF666666),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }).toList(),
         ),

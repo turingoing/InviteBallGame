@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/model/main/dynamic_model.dart';
 import 'package:flutter_application_1/widgets/dynamic_card.dart';
 import 'package:flutter_application_1/widgets/ranking_entry_card.dart'; // 排行榜卡片
+import 'package:flutter_application_1/pages/Main/Conponents/dynamic_detail.dart'; // 动态详情页
 
 // 动态列表页
 // 注意：改成StatefulWidget，因为要异步读取JSON文件
@@ -61,7 +62,7 @@ class _DynamicPageState extends State<DynamicPage> {
     try {
       // 构建请求URL
       final url = Uri.parse(
-        'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=05&itcid=11805',
+        'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11805',
       );
       print('请求动态数据URL: $url');
 
@@ -94,6 +95,9 @@ class _DynamicPageState extends State<DynamicPage> {
                 'headimg': item['headimg'],
                 'content': item['content'],
                 'create_time': item['create_time'] ?? item['time'] ?? '',
+                'like': item['like'], // 提取点赞数量
+                'comment': item['comment'], // 提取评论数量
+                'collect': item['collect'], // 提取收藏数量
                 'imageUrls': [],
               };
             }
@@ -175,10 +179,12 @@ class _DynamicPageState extends State<DynamicPage> {
               imageUrls: data['imageUrls'] is List
                   ? List<String>.from(data['imageUrls'])
                   : [], // 确保是List类型
-              likeCount: 0, // 接口没有返回点赞数
-              collectCount: 0, // 接口没有返回收藏数
-              commentCount: 0, // 接口没有返回评论数
+              likeCount: int.tryParse(data['like']?.toString() ?? '0') ?? 0,
+              collectCount: int.tryParse(data['collect']?.toString() ?? '0') ?? 0,
+              commentCount: int.tryParse(data['comment']?.toString() ?? '0') ?? 0,
               isOnline: true, // 默认在线状态
+              createTime: data['create_time']?.toString() ?? '', // 传递发布时间
+              postid: data['postid']?.toString() ?? '', // 传递帖子ID
             );
             dynamicList.add(dynamicModel);
           }
@@ -227,7 +233,20 @@ class _DynamicPageState extends State<DynamicPage> {
             }
             // 显示动态卡片（索引减1，跳过排行榜）
             final dynamicData = dynamicList[index - 1];
-            return DynamicCard(dynamicData: dynamicData);
+            return DynamicCard(
+              dynamicData: dynamicData,
+              showLikeAction: false, // 动态页面仅作展示
+              showCollectAction: false, // 动态页面仅作展示
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        DynamicDetailPage(dynamicData: dynamicData),
+                  ),
+                );
+              },
+            );
           },
         );
       },
