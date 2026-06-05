@@ -2,19 +2,30 @@ import 'package:flutter/material.dart';
 
 
 class MemberCenterApp extends StatelessWidget {
-  const MemberCenterApp({super.key});
+  final String userType;
+  final String endDate;
+
+  const MemberCenterApp({
+    super.key,
+    required this.userType,
+    required this.endDate,
+  });
 
   @override
   Widget build(BuildContext context) {
-
-
-    
-    return MemberCenterPage();
+    return MemberCenterPage(userType: userType, endDate: endDate);
   }
 }
 
 class MemberCenterPage extends StatefulWidget {
-  const MemberCenterPage({super.key});
+  final String userType;
+  final String endDate;
+
+  const MemberCenterPage({
+    super.key,
+    required this.userType,
+    required this.endDate,
+  });
 
   @override
   State<MemberCenterPage> createState() => _MemberCenterPageState();
@@ -54,6 +65,7 @@ class _MemberCenterPageState extends State<MemberCenterPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('会员中心接收到的数据 - userType: ${widget.userType}, endDate: ${widget.endDate}');
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -138,15 +150,17 @@ class _MemberCenterPageState extends State<MemberCenterPage> {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     '会员有效期至',
                     style: TextStyle(fontSize: 14, color: Colors.white70),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    '2025-12-31',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
+                    widget.userType == '1' 
+                        ? widget.endDate 
+                        : (widget.endDate.isNotEmpty ? widget.endDate : '还未注册过会员'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
                   ),
                 ],
               ),

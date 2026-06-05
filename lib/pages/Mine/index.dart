@@ -72,11 +72,56 @@ class _ProfilePageState extends State<ProfilePage> {
   // 会员及身份标识
   String _userType = '0'; // 0:非会员, 1:会员
   String _userTitle = '0'; // 0:普通用户, 1:教练, 2:商家, 3:官方
+  String _endDate = ''; // 会员过期时间
 
   @override
   void initState() {
     super.initState();
     _fetchUserInfo();
+    _fetchMemberStatus();
+  }
+
+  Future<void> _fetchMemberStatus() async {
+    try {
+      String? itsid = await DataStorage.loadItsid();
+      if (itsid == null || itsid.isEmpty) return;
+
+      final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=15&itcid=11815&itsid=$itsid');
+      print('请求会员状态接口 URL: $url');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        print('会员状态接口返回数据: ${response.body}');
+        final data = json.decode(response.body);
+        String userType = data['usertype']?.toString() ?? '0';
+        String endDate = data['enddate']?.toString() ?? '';
+
+        print('解析后的会员信息 - usertype: $userType, enddate: $endDate');
+
+        if (userType == '1' && endDate.isNotEmpty) {
+          try {
+            DateTime endDateTime = DateTime.parse(endDate);
+            if (endDateTime.isBefore(DateTime.now())) {
+              // 已过期，调用补齐接口
+              final phoneUrl = Uri.parse('https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11814&itsid=$itsid');
+              print('会员过期，调用补齐接口 URL: $phoneUrl');
+              await http.get(phoneUrl);
+              // 再次调用会员状态接口
+              return _fetchMemberStatus();
+            }
+          } catch (e) {
+            print('解析会员过期时间失败: $e');
+          }
+        }
+
+        setState(() {
+          _userType = userType;
+          _endDate = endDate;
+        });
+      }
+    } catch (e) {
+      print('获取会员状态失败: $e');
+    }
   }
 
   String _getBallRatingStr(String ratingStr) {
@@ -643,10 +688,18 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: InkWell(
               onTap: (){
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>MemberCenterApp()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MemberCenterApp(
+                      userType: _userType,
+                      endDate: _endDate,
+                    ),
+                  ),
+                );
               },
               child: Text(
-                _userType == '1' ? '会员专区' : '立即开通',
+                _userType == '1' ? '会员中心' : '立即开通',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF1E1E1E),
