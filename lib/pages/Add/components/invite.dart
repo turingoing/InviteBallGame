@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter_application_1/api/competition_api.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
 import 'package:flutter_application_1/pages/VenueList/components/payment_page.dart';
+import 'package:flutter_application_1/utils/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class InviteForm extends StatefulWidget {
-  const InviteForm({super.key});
+  final String? initialLocation;
+  const InviteForm({super.key, this.initialLocation});
 
   @override
   State<InviteForm> createState() => _InviteFormState();
 }
 
 class _InviteFormState extends State<InviteForm> {
-  final TextEditingController _locationController = TextEditingController();
+  late final TextEditingController _locationController;
   final TextEditingController _noteController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _locationController = TextEditingController(text: widget.initialLocation ?? '');
+  }
   double _participantCount = 4;
   int _selectedSkillLevel = 3;
   String _selectedGameType = '中式八球';
@@ -23,6 +33,53 @@ class _InviteFormState extends State<InviteForm> {
   bool _depositChecked = false;
   bool _isSubmitting = false;
   String _submitMessage = '';
+
+  // 搜索相关状态
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    _noteController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // 搜索商家
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.isEmpty) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+        return;
+      }
+
+      setState(() => _isSearching = true);
+
+      try {
+        Position? position = await LocationService.getCurrentLocation();
+        if (position != null) {
+          final results = await LocationService.searchNearbyPOI(
+            query,
+            position.latitude,
+            position.longitude,
+          );
+          setState(() {
+            _searchResults = results ?? [];
+          });
+        }
+      } catch (e) {
+        print('搜索商家失败: $e');
+      } finally {
+        setState(() => _isSearching = false);
+      }
+    });
+  }
 
   // 约球类型转数字编码
   String _getGameTypeCode(String gameType) {
@@ -231,17 +288,75 @@ class _InviteFormState extends State<InviteForm> {
 
   // 活动地点输入
   Widget _buildLocationInput(ColorScheme colorScheme) {
-    return TextField(
-      controller: _locationController,
-      decoration: InputDecoration(
-        labelText: '活动地点',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _locationController,
+          onChanged: _onSearchChanged,
+          decoration: InputDecoration(
+            labelText: '搜索商家/地点',
+            hintText: '输入关键词搜索商家',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
+            suffixIcon: _locationController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _locationController.clear();
+                      _onSearchChanged('');
+                    },
+                  )
+                : null,
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.primary),
-        ),
-      ),
+        if (_isSearching)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+        if (_searchResults.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: _searchResults.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final poi = _searchResults[index];
+                return ListTile(
+                  title: Text(poi['name'] ?? '未知商家'),
+                  subtitle: Text(poi['address'] is String ? poi['address'] : '地址未知', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  onTap: () {
+                    setState(() {
+                      _locationController.text = poi['name'];
+                      _searchResults = [];
+                    });
+                    // 收起键盘
+                    FocusScope.of(context).unfocus();
+                  },
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 

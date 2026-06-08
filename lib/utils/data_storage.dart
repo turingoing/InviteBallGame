@@ -2,14 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 // 数据存储服务
 class DataStorage {
   // 本地缓存文件名
   static const String _inviteListFileName = 'invite_list.json';
-  static const String _postIdFileName = 'postid.txt';
   static const String _itsidFileName = 'itsid.txt';
-  static const String _globalIdCounterKey = 'global_id_counter';
 
   // 获取应用文档目录路径
   static Future<String> get _documentPath async {
@@ -60,46 +59,28 @@ class DataStorage {
     return await file.exists();
   }
 
-  static Future<String> get _postIdFilePath async {
-    final path = await _documentPath;
-    return '$path/$_postIdFileName';
-  }
-
+  /// 从远程接口获取全局帖子 ID
   static Future<int> getAndIncrementPostId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      int currentPostId = prefs.getInt(_globalIdCounterKey) ?? 0;
-
-      // 兼容旧版文件计数器，避免升级后又从 1 开始。
-      if (currentPostId <= 0) {
-        final filePath = await _postIdFilePath;
-        final file = File(filePath);
-        if (await file.exists()) {
-          final content = await file.readAsString();
-          currentPostId = int.tryParse(content) ?? 0;
+    String? itsid = await loadItsid();
+    final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=16&itcid=11816&itsid=${itsid ?? ""}');
+    
+    print('正在获取全局帖子 ID: $url');
+    final response = await http.get(url);
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['maxid'] != null) {
+        int maxid = int.tryParse(data['maxid'].toString()) ?? 0;
+        if (maxid > 0) {
+          int currentPostId = maxid + 1;
+          print('✅ 成功获取全局最大 ID: $maxid, 当前发布帖子 ID 将使用: $currentPostId');
+          return currentPostId;
         }
       }
-
-      // 确保帖子ID从30开始
-      if (currentPostId < 29) {
-        currentPostId = 29;
-      }
-
-      currentPostId++;
-      await prefs.setInt(_globalIdCounterKey, currentPostId);
-
-      // 同步写回旧文件，兼容仍依赖文件值的旧逻辑。
-      final filePath = await _postIdFilePath;
-      final file = File(filePath);
-      await file.writeAsString(currentPostId.toString());
-
-      print('✅ 全局帖子计数器自增成功: $currentPostId');
-      return currentPostId;
-    } catch (e) {
-      print('获取帖子ID失败: $e');
-      String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      return int.parse(timestamp.substring(timestamp.length - 4));
     }
+    
+    print('❌ 获取全局帖子 ID 失败: ${response.statusCode} - ${response.body}');
+    throw Exception('无法从服务器获取帖子 ID，请检查网络连接或稍后重试');
   }
 
   // 获取 itsid 文件路径

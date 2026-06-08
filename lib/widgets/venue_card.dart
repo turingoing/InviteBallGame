@@ -1,6 +1,7 @@
 // lib/widgets/venue_card.dart
 import 'package:flutter/material.dart';
 import '../model/main/surroundings_model.dart';
+import '../pages/Add/components/invite.dart';
 
 class VenueCard extends StatelessWidget {
   final VenueModel venueData; // 传入场馆模型数据
@@ -62,7 +63,14 @@ class VenueCard extends StatelessWidget {
                 // 场馆名称 + 认证图标
                 Row(
                   children: [
-                    Text(venueData.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(
+                        venueData.name, 
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     if (venueData.tags.isNotEmpty) const Icon(Icons.verified, color: Color(0xFF0500FA), size: 18),
                   ],
                 ),
@@ -71,11 +79,19 @@ class VenueCard extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.orange, size: 12),
-                    Text(' ${venueData.score}', style: const TextStyle(color: Colors.orange)),
-                    if (venueData.businessHours != null) Text('  ${venueData.businessHours}', style: const TextStyle(color: Colors.grey)),
-                    const SizedBox(width: 8),
-                    ...venueData.tags.map((tag) => Container(
-                      margin: const EdgeInsets.only(right: 6),
+                    Text(' ${venueData.score}', style: const TextStyle(color: Colors.orange, fontSize: 12)),
+                    if (venueData.businessHours != null && venueData.businessHours!.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          '  ${venueData.businessHours}', 
+                          style: const TextStyle(color: Colors.grey, fontSize: 9),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    const SizedBox(width: 4),
+                    ...venueData.tags.take(2).map((tag) => Container(
+                      margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                       decoration: BoxDecoration(color: Color(0xFFE0E0FF), borderRadius: BorderRadius.circular(4)),
                       child: Text(tag, style: TextStyle(color: Color(0xFF000099), fontSize: 8)),
@@ -95,21 +111,40 @@ class VenueCard extends StatelessWidget {
                 Row(
                   children: [
                     if (venueData.promotion.isNotEmpty)
-                      Container(
-                        decoration: BoxDecoration(color: Colors.pink[50], borderRadius: BorderRadius.circular(4)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.card_giftcard, color: Colors.pink, size: 12),
-                            const SizedBox(width: 3),
-                            Text(venueData.promotion, style: TextStyle(color: Colors.pink[700], fontSize: 10)),
-                          ],
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.pink[50], borderRadius: BorderRadius.circular(4)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.card_giftcard, color: Colors.pink, size: 12),
+                              const SizedBox(width: 3),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    venueData.promotion, 
+                                    style: TextStyle(color: Colors.pink[700], fontSize: 10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    const SizedBox(width: 1),
+                    const SizedBox(width: 4),
                     const Spacer(),
                     ElevatedButton(
-                      onPressed: venueData.buttonEnabled ? () {} : null,
+                      onPressed: venueData.buttonEnabled ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InviteForm(initialLocation: venueData.name),
+                          ),
+                        );
+                      } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: venueData.buttonEnabled ? const Color(0xFF0500FA) : Colors.grey[300],
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -5,6 +5,7 @@ import 'package:flutter_application_1/pages/Mine/components/mypublish.dart';
 import 'package:flutter_application_1/pages/Mine/components/my_dynamic.dart';
 import 'package:flutter_application_1/pages/Mine/components/edit_profile.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/utils/location_service.dart';
 import 'package:flutter_application_1/pages/Auth/login.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -79,6 +80,27 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _fetchUserInfo();
     _fetchMemberStatus();
+    _fetchCurrentLocation();
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    LocationResult? address = await LocationService.getCurrentAddress();
+    if (address != null && mounted) {
+      setState(() {
+        String locStr = address.province == address.city 
+            ? address.city 
+            : '${address.province} ${address.city}';
+        
+        // 提取当前的 userid
+        String currentUserId = _userId.split(' | ').first;
+        if (!currentUserId.startsWith('搭子号：')) {
+          currentUserId = '搭子号：$currentUserId';
+        }
+        
+        _location = locStr;
+        _userId = '$currentUserId | 坐标：$_location';
+      });
+    }
   }
 
   Future<void> _fetchMemberStatus() async {
@@ -169,8 +191,13 @@ class _ProfilePageState extends State<ProfilePage> {
           // 其他个人信息展示
           if (userInfo['userid'] != null) {
             String city = userInfo['city']?.toString() ?? '';
-            _userId = '搭子号：${userInfo['userid']} | 坐标：$city';
-            _location = city; // 若别处仍需用单独的 location，顺便更新
+            // 只有当定位信息还未获取到时，才使用接口返回的城市信息
+            if (_location == '  ' || _location.isEmpty) {
+              _userId = '搭子号：${userInfo['userid']} | 坐标：$city';
+              _location = city;
+            } else {
+              _userId = '搭子号：${userInfo['userid']} | 坐标：$_location';
+            }
           }
 
           if (userInfo['creditscore'] != null) {

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_application_1/api/competition_api.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/utils/location_service.dart';
+import 'package:geolocator/geolocator.dart';
+
 // ------------------------------
 // 3. 发布比赛页（本次新增，完整实现）
 // ------------------------------
@@ -32,13 +36,53 @@ class _PublishCompetitionPageState extends State<PublishCompetitionPage> {
   bool _isSubmitting = false;
   String? _submitMessage;
 
+  // 搜索相关状态
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _debounce;
+
   @override
   void dispose() {
     _eventNameController.dispose();
     _noteController.dispose();
     _participantController.dispose();
     _locationController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  // 搜索商家
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.isEmpty) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+        return;
+      }
+
+      setState(() => _isSearching = true);
+
+      try {
+        Position? position = await LocationService.getCurrentLocation();
+        if (position != null) {
+          final results = await LocationService.searchNearbyPOI(
+            query,
+            position.latitude,
+            position.longitude,
+          );
+          setState(() {
+            _searchResults = results ?? [];
+          });
+        }
+      } catch (e) {
+        print('搜索商家失败: $e');
+      } finally {
+        setState(() => _isSearching = false);
+      }
+    });
   }
 
   String _getSkillLevelText() {
@@ -568,68 +612,121 @@ class _PublishCompetitionPageState extends State<PublishCompetitionPage> {
 
   // 活动地点组件
   Widget _buildLocationItem(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.location_on_outlined,
-              color: colorScheme.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '活动地点',
-                  style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: _locationController,
-                  onChanged: (value) {
-                    location = value;
-                  },
-                  maxLength: 50,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
-                    hintText: '请输入活动地点',
-                    hintStyle: TextStyle(fontSize: 20, color: Color(0xFF9E9E9E)),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '活动地点',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: _locationController,
+                      onChanged: (value) {
+                        setState(() {
+                          location = value;
+                        });
+                        _onSearchChanged(value);
+                      },
+                      maxLength: 50,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        counterText: '',
+                        hintText: '搜索商家/地点',
+                        hintStyle: TextStyle(fontSize: 20, color: Color(0xFF9E9E9E)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isSearching)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+        if (_searchResults.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: _searchResults.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final poi = _searchResults[index];
+                  return ListTile(
+                    title: Text(poi['name'] ?? '未知商家'),
+                    subtitle: Text(poi['address'] is String ? poi['address'] : '地址未知', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    onTap: () {
+                      setState(() {
+                        _locationController.text = poi['name'];
+                        location = poi['name'];
+                        _searchResults = [];
+                      });
+                      FocusScope.of(context).unfocus();
+                    },
+                  );
+                },
+              ),
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 

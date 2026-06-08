@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter_application_1/utils/data_storage.dart';
 import 'package:city_pickers/city_pickers.dart';
+import 'package:flutter_application_1/utils/location_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -326,7 +327,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Widget _buildInfoRow(String label, String value, {VoidCallback? onTap, String? fieldKey}) {
+  Future<void> _autoLocation() async {
+    // 显示加载提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('正在获取当前位置...'), duration: Duration(seconds: 1)),
+    );
+
+    LocationResult? address = await LocationService.getCurrentAddress();
+    if (address != null) {
+      setState(() {
+        _province = address.province;
+        _city = address.city;
+        _district = address.district;
+        
+        // 拼接完整地址显示，如果是直辖市，省和市的名字相同，可以去重显示
+        if (_province == _city) {
+          _location = '$_city $_district'.trim();
+        } else {
+          _location = '$_province $_city $_district'.trim();
+        }
+        
+        if (_location.isEmpty) {
+          _location = '未知';
+        } else {
+          _invalidFields.remove('location');
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('定位成功：$_location')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('定位失败，请检查定位服务和权限')),
+      );
+    }
+  }
+
+  Widget _buildInfoRow(String label, String value, {VoidCallback? onTap, String? fieldKey, Widget? suffix}) {
     final bool hasError = fieldKey != null && _invalidFields.contains(fieldKey);
     return InkWell(
       onTap: onTap,
@@ -354,6 +391,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             Row(
               children: [
+                if (suffix != null) ...[
+                  suffix,
+                  const SizedBox(width: 8),
+                ],
                 Text(
                   value,
                   style: TextStyle(
@@ -556,7 +597,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _buildInfoRow('昵称', _nicknameController.text.isNotEmpty ? _nicknameController.text : '未知', onTap: _showNicknameDialog, fieldKey: 'nickname'),
             _buildInfoRow('性别', _gender, onTap: _showGenderPicker, fieldKey: 'gender'),
             _buildInfoRow('生日', _birthday, onTap: _showDatePicker, fieldKey: 'birthday'),
-            _buildInfoRow('常住地', _location, onTap: _showLocationPicker, fieldKey: 'location'),
+            _buildInfoRow(
+              '常住地', 
+              _location, 
+              onTap: _showLocationPicker, 
+              fieldKey: 'location',
+              suffix: InkWell(
+                 onTap: () {
+                   _autoLocation();
+                 },
+                 child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0033FF).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.my_location, size: 18, color: Color(0xFF0033FF)),
+                ),
+              ),
+            ),
             // 我的水平
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
