@@ -254,17 +254,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
         // backgroundColor: Colors.white,
         elevation: 0,
-//搜索图标
-        leading: Padding(     //左边组件
-          padding: const EdgeInsets.only(top: 1), // 想更右就把16改成20、24
-          child: IconButton(
-            icon: const Icon(Icons.search, color: Colors.grey,),
-            onPressed: () {
-              final textStyle = Theme.of(context).textTheme.bodyLarge!;
-            print("当前全局字体 = ${textStyle.fontFamily}");
-            },
-          ),
-        ),
+        centerTitle: true,
+        leading: const SizedBox(width: 48), // 占位以平衡右侧搜索图标，使中间 Tab 居中
         title: TabBar(
           controller: _tabController,
           // indicatorColor: Colors.blue,
@@ -300,27 +291,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             Tab(text: '周边'),
           ],
         ),
-//消息图标
+//搜索图标
         actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.grey),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.grey,),
+            onPressed: () {
+              // 搜索逻辑
+            },
           ),
         ],
       ),

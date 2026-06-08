@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../model/main/dynamic_model.dart'; // 导入模型类
 import '../pages/photo_viewer_page.dart'; // 导入图片查看器页面
+import '../pages/video_player_page.dart'; // 导入视频播放页面
 
 // 动态卡片组件
 // 通用动态卡片组件（支持自定义内容）
@@ -299,62 +300,64 @@ class _DynamicCardState extends State<DynamicCard> {
             ),
             const SizedBox(height: 10),
 
-            // 3. 图片内容
+            // 3. 媒体内容（图片或视频）
             Container(
               alignment: Alignment.centerLeft,
-              child: widget.dynamicData.imageUrls.length == 1
+              child: widget.dynamicData.videoUrl != null
                   ? GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PhotoViewerPage(
-                              imageUrls: widget.dynamicData.imageUrls,
-                              initialIndex: 0,
+                            builder: (context) => VideoPlayerPage(
+                              videoUrl: widget.dynamicData.videoUrl!,
+                              userName: widget.dynamicData.userName,
+                              avatarUrl: widget.dynamicData.avatarUrl,
+                              content: widget.dynamicData.content,
                             ),
                           ),
                         );
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final imgPath =
-                                widget.dynamicData.imageUrls.first; //获得图片地址
-                            final imageWidth = constraints.maxWidth < 250
-                                ? constraints.maxWidth
-                                : 250.0;
-                            final imageHeight = imageWidth * 0.6;
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final imgPath = widget.dynamicData.thumbnailUrl ?? 
+                                               (widget.dynamicData.imageUrls.isNotEmpty ? widget.dynamicData.imageUrls.first : '');
+                                final imageWidth = constraints.maxWidth < 250
+                                    ? constraints.maxWidth
+                                    : 250.0;
+                                final imageHeight = imageWidth * 0.6;
 
-                            return _buildNetworkOrAssetImage(
-                              imgPath,
-                              width: imageWidth,
-                              height: imageHeight,
-                              alignment: Alignment.center,
-                            );
-                          },
+                                return _buildNetworkOrAssetImage(
+                                  imgPath,
+                                  width: imageWidth,
+                                  height: imageHeight,
+                                  alignment: Alignment.center,
+                                );
+                              },
+                            ),
+                            const Icon(
+                              Icons.play_circle_outline,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                          ],
                         ),
                       ),
                     )
-                  : GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                      children: widget.dynamicData.imageUrls.asMap().entries.map((
-                        entry,
-                      ) {
-                        final index = entry.key;
-                        final url = entry.value;
-                        return GestureDetector(
+                  : widget.dynamicData.imageUrls.length == 1
+                      ? GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => PhotoViewerPage(
                                   imageUrls: widget.dynamicData.imageUrls,
-                                  initialIndex: index,
+                                  initialIndex: 0,
                                 ),
                               ),
                             );
@@ -363,19 +366,63 @@ class _DynamicCardState extends State<DynamicCard> {
                             borderRadius: BorderRadius.circular(8),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final imageSize = constraints.maxWidth;
+                                final imgPath =
+                                    widget.dynamicData.imageUrls.first; //获得图片地址
+                                final imageWidth = constraints.maxWidth < 250
+                                    ? constraints.maxWidth
+                                    : 250.0;
+                                final imageHeight = imageWidth * 0.6;
+
                                 return _buildNetworkOrAssetImage(
-                                  url,
-                                  width: imageSize,
-                                  height: imageSize,
+                                  imgPath,
+                                  width: imageWidth,
+                                  height: imageHeight,
                                   alignment: Alignment.center,
                                 );
                               },
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        )
+                      : GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
+                          children: widget.dynamicData.imageUrls.asMap().entries.map((
+                            entry,
+                          ) {
+                            final index = entry.key;
+                            final url = entry.value;
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PhotoViewerPage(
+                                      imageUrls: widget.dynamicData.imageUrls,
+                                      initialIndex: index,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final imageSize = constraints.maxWidth;
+                                    return _buildNetworkOrAssetImage(
+                                      url,
+                                      width: imageSize,
+                                      height: imageSize,
+                                      alignment: Alignment.center,
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
             ),
             const SizedBox(height: 10),
             // 4. 互动栏（自定义数字）

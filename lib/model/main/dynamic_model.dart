@@ -6,6 +6,8 @@ class DynamicModel {
   final String content; // 动态文本内容
   final String? iconUrl;
   final List<String> imageUrls; // 图片URL列表
+  final String? videoUrl; // 视频URL
+  final String? thumbnailUrl; // 视频缩略图URL
   final int likeCount; // 点赞数
   final int collectCount; // 收藏数
   final int commentCount; // 评论数
@@ -21,6 +23,8 @@ class DynamicModel {
     required this.content,
     this.iconUrl,
     required this.imageUrls,
+    this.videoUrl,
+    this.thumbnailUrl,
     this.likeCount = 0,
     this.collectCount = 0,
     this.commentCount = 0,
@@ -29,15 +33,17 @@ class DynamicModel {
     this.postid = '',
   });
 
-  // 核心：新增从JSON Map解析成模型的方法（关键！）
+  // 核心：从JSON Map解析成模型的方法
   factory DynamicModel.fromJson(Map<String, dynamic> json) {
     return DynamicModel(
-      avatarUrl: json['avatarUrl'] ?? "", // 空值兜底，避免崩溃
+      avatarUrl: json['avatarUrl'] ?? "",
       userName: json['userName'] ?? "",
       location: json['location'] ?? "",
       content: json['content'] ?? "",
       iconUrl:json['iconUrl'],
       imageUrls: (json['imageUrls'] as List?)?.map((url) => url.toString()).toList() ?? [],
+      videoUrl: json['videoUrl'],
+      thumbnailUrl: json['thumbnailUrl'],
       likeCount: json['likeCount'] ?? 0,
       collectCount: json['collectCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,

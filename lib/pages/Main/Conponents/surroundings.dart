@@ -255,11 +255,29 @@ class _SurroundingsPageState extends State<SurroundingsPage> {
               }
             }
 
+            // 提取图片列表
+            List<String> images = [];
+            if (poi['photos'] != null && poi['photos'] is List) {
+              for (var photo in poi['photos']) {
+                if (photo is Map && photo['url'] != null) {
+                  images.add(photo['url'].toString());
+                }
+              }
+            }
+            
+            // 如果没有图片，则提供一些占位图
+            if (images.isEmpty) {
+              images = [
+                'https://picsum.photos/seed/${poi['id']}_1/800/600',
+                'https://picsum.photos/seed/${poi['id']}_2/800/600',
+                'https://picsum.photos/seed/${poi['id']}_3/800/600',
+              ];
+            }
+
             // 将高德 API 返回的数据映射到 VenueModel
             return VenueModel(
-              imageUrl: (poi['photos'] != null && poi['photos'] is List && poi['photos'].isNotEmpty) 
-                  ? (poi['photos'][0] is Map ? poi['photos'][0]['url']?.toString() ?? 'https://picsum.photos/seed/${poi['id']}/400/300' : 'https://picsum.photos/seed/${poi['id']}/400/300')
-                  : 'https://picsum.photos/seed/${poi['id']}/400/300', // 没有图片用随机占位
+              imageUrl: images.isNotEmpty ? images.first : 'https://picsum.photos/seed/${poi['id']}/400/300',
+              imageList: images,
               name: poi['name']?.toString() ?? '未知场馆',
               score: venueScore,
               tags: [poi['type']?.toString().split(';').last ?? '台球馆'],

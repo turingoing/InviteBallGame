@@ -123,21 +123,30 @@ class _DynamicPageState extends State<DynamicPage> {
               groupedPosts[postid]!['headimg'] = item['headimg'];
             }
 
-            // 处理图片：imgname字段包含逗号分隔的图片名列表
+            // 处理媒体文件：imgname字段包含逗号分隔的文件名列表
             if (item['imgname'] != null) {
               String imgNames = item['imgname'].toString().trim();
-              // 移除可能包含的反引号(`)
               imgNames = imgNames.replaceAll('`', '');
               if (imgNames.isNotEmpty) {
-                // 按逗号分割图片名
                 List<String> imgNameList = imgNames.split(',');
-                for (String imgName in imgNameList) {
-                  imgName = imgName.trim();
-                  if (imgName.isNotEmpty) {
-                    // 拼接完整的图片URL路径
-                    String fullImgUrl =
-                        'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$imgName';
-                    groupedPosts[postid]!['imageUrls'].add(fullImgUrl);
+                for (String name in imgNameList) {
+                  name = name.trim();
+                  if (name.isEmpty) continue;
+
+                  String fullUrl = 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$name';
+                  
+                  // 简单判断是否为视频或视频缩略图
+                  if (name.contains('_thumb')) {
+                    groupedPosts[postid]!['thumbnailUrl'] = fullUrl;
+                  } else if (name.endsWith('.mp4') || name.endsWith('.mov') || name.contains('_main')) {
+                    // 如果文件名包含 _main 且不是图片扩展名，或者直接是视频扩展名
+                    if (name.toLowerCase().endsWith('.jpg') || name.toLowerCase().endsWith('.png') || name.toLowerCase().endsWith('.jpeg')) {
+                       groupedPosts[postid]!['imageUrls'].add(fullUrl);
+                    } else {
+                       groupedPosts[postid]!['videoUrl'] = fullUrl;
+                    }
+                  } else {
+                    groupedPosts[postid]!['imageUrls'].add(fullUrl);
                   }
                 }
               }
@@ -178,7 +187,9 @@ class _DynamicPageState extends State<DynamicPage> {
               content: data['content'] ?? '',
               imageUrls: data['imageUrls'] is List
                   ? List<String>.from(data['imageUrls'])
-                  : [], // 确保是List类型
+                  : [], 
+              videoUrl: data['videoUrl'],
+              thumbnailUrl: data['thumbnailUrl'],
               likeCount: int.tryParse(data['like']?.toString() ?? '0') ?? 0,
               collectCount: int.tryParse(data['collect']?.toString() ?? '0') ?? 0,
               commentCount: int.tryParse(data['comment']?.toString() ?? '0') ?? 0,

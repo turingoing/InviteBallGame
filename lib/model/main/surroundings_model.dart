@@ -1,6 +1,7 @@
 // lib/model/venue_model.dart
 class VenueModel {
-  final String imageUrl;       // 场馆图片URL
+  final String imageUrl;       // 场馆主图URL
+  final List<String> imageList; // 场馆图片列表
   final String name;           // 场馆名称
   final double score;          // 评分
   final List<String> tags;     // 标签列表
@@ -15,6 +16,7 @@ class VenueModel {
   // 构造函数，带默认值避免空指针
   VenueModel({
     required this.imageUrl,
+    this.imageList = const [],
     required this.name,
     required this.score,
     required this.tags,
@@ -31,6 +33,7 @@ class VenueModel {
   factory VenueModel.fromJson(Map<String, dynamic> json) {
     return VenueModel(
       imageUrl: json['imageUrl'] ?? "",
+      imageList: (json['imageList'] as List?)?.map((img) => img.toString()).toList() ?? [],
       name: json['name'] ?? "",
       score: (json['score'] ?? 0.0).toDouble(), // 确保是double类型
       tags: (json['tags'] as List?)?.map((tag) => tag.toString()).toList() ?? [],
