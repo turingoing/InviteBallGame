@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_application_1/utils/data_storage.dart';
 
 class InviteDetailPage extends StatefulWidget {
   final String inviteId;
+  final String location;
 
-  const InviteDetailPage({super.key, required this.inviteId});
+  const InviteDetailPage({super.key, required this.inviteId, this.location = ''});
 
   @override
   State<InviteDetailPage> createState() => _InviteDetailPageState();
@@ -31,6 +33,8 @@ class _InviteDetailPageState extends State<InviteDetailPage> {
     try {
       final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11811&inviteid=${widget.inviteId}');
       final response = await http.get(url);
+      
+      print('加入者列表接口响应: ${response.body}');
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -45,6 +49,13 @@ class _InviteDetailPageState extends State<InviteDetailPage> {
           // Sometimes single object is returned instead of list if there's only one
           participantsList = [data];
         }
+
+        // 过滤掉 time 为空的加入者
+        participantsList = participantsList.where((item) {
+          if (item is! Map) return false;
+          final time = item['time']?.toString() ?? '';
+          return time.isNotEmpty;
+        }).toList();
 
         setState(() {
           _participants = participantsList;
@@ -81,11 +92,18 @@ class _InviteDetailPageState extends State<InviteDetailPage> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      final url = Uri.parse('https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11808');
+      // 获取本地存储的 itsid
+      String? itsid = await DataStorage.loadItsid();
+      String baseUrl = 'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11808';
+      if (itsid != null && itsid.isNotEmpty) {
+        baseUrl += '&itsid=$itsid';
+      }
+      final url = Uri.parse(baseUrl);
       final requestBody = {
         "Participatorid": participatorId,
         "Isconsent": isConsent,
         "Inviteid": widget.inviteId,
+        "location": widget.location,
       };
 
       final response = await http.post(

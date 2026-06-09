@@ -327,10 +327,9 @@ class _DynamicCardState extends State<DynamicCard> {
                               builder: (context, constraints) {
                                 final imgPath = widget.dynamicData.thumbnailUrl ?? 
                                                (widget.dynamicData.imageUrls.isNotEmpty ? widget.dynamicData.imageUrls.first : '');
-                                final imageWidth = constraints.maxWidth < 250
-                                    ? constraints.maxWidth
-                                    : 250.0;
-                                final imageHeight = imageWidth * 0.6;
+                                // 单张视频采用 3:4 比例展示大图
+                                final imageWidth = constraints.maxWidth * 0.7;
+                                final imageHeight = imageWidth * 4 / 3;
 
                                 return _buildNetworkOrAssetImage(
                                   imgPath,
@@ -368,10 +367,9 @@ class _DynamicCardState extends State<DynamicCard> {
                               builder: (context, constraints) {
                                 final imgPath =
                                     widget.dynamicData.imageUrls.first; //获得图片地址
-                                final imageWidth = constraints.maxWidth < 250
-                                    ? constraints.maxWidth
-                                    : 250.0;
-                                final imageHeight = imageWidth * 0.6;
+                                // 单张图片采用 3:4 比例展示大图
+                                final imageWidth = constraints.maxWidth * 0.7;
+                                final imageHeight = imageWidth * 4 / 3;
 
                                 return _buildNetworkOrAssetImage(
                                   imgPath,

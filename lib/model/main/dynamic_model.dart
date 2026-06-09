@@ -14,6 +14,7 @@ class DynamicModel {
   final bool isOnline; // 是否在线（头像右下角绿点）
   final String createTime; // 发布时间
   final String postid; // 帖子ID
+  final String userid; // 发布者ID
 
   // 构造函数，支持可选参数+默认值
   DynamicModel({
@@ -31,6 +32,7 @@ class DynamicModel {
     this.isOnline = true,
     this.createTime = '',
     this.postid = '',
+    this.userid = '',
   });
 
   // 核心：从JSON Map解析成模型的方法
@@ -50,6 +52,7 @@ class DynamicModel {
       isOnline: json['isOnline'] ?? true,
       createTime: json['createTime'] ?? "",
       postid: json['postid'] ?? "",
+      userid: json['userid'] ?? "",
     );
   }
 }

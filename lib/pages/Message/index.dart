@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter_application_1/model/messages/list_model.dart'; // model路径
 import 'package:flutter_application_1/utils/json_reader.dart'; // 工具类路径
+import 'package:flutter_application_1/utils/data_storage.dart';
+import 'package:flutter_application_1/pages/Message/interaction_notifications.dart';
+import 'package:flutter_application_1/pages/Message/booking_notifications.dart';
 
 
 class MessagePage extends StatefulWidget {
@@ -24,25 +29,6 @@ class _MessagePageState extends State<MessagePage> {
   }
 }
 
-
-// 分类-数据模型
-class MessageCategory {
-  final IconData icon;
-  final String title;
-  final Color iconColor;
-  final Color bgColor;
-  final bool hasBadge;
-
-  MessageCategory({
-    required this.icon,
-    required this.title,
-    required this.iconColor,
-    required this.bgColor,
-    required this.hasBadge,
-  });
-}
-
-
 //主要区域
 class Message extends StatefulWidget {
   const Message({super.key});
@@ -53,57 +39,109 @@ class Message extends StatefulWidget {
 
 class _MessageState extends State<Message> {
 
-  // 分类-json数据
-  final List<MessageCategory> _categoryList = [
-    MessageCategory(
-      icon: Icons.favorite,
-      title: '互动消息',
-      iconColor: const Color(0xFF007AFF),
-      bgColor: const Color(0xFFF0F4FF),
-      hasBadge: true,
-    ),
-    MessageCategory(
-      icon: Icons.sports_tennis,
-      title: '约球通知',
-      iconColor: const Color(0xFF5856D6),
-      bgColor: const Color(0xFFF5F3FF),
-      hasBadge: false,
-    ),
-    MessageCategory(
-      icon: Icons.notifications,
-      title: '系统通知',
-      iconColor: const Color(0xFFFF9500),
-      bgColor: const Color(0xFFFFF7E6),
-      hasBadge: true,
-    ),
-    MessageCategory(
-      icon: Icons.headphones,
-      title: '在线客服',
-      iconColor: const Color(0xFF007AFF),
-      bgColor: const Color(0xFFF0F4FF),
-      hasBadge: false,
-    ),
-  ];
-
-
-
 // 从JSON加载的消息列表
 List<MessageItem> _messageList = [];
 
 @override
 void initState() {
   super.initState();
-  _loadMessageData(); // 页面一打开就加载JSON
+  _loadMessageData(); // 页面一打开就加载JSON并请求接口
 }
 
 Future<void> _loadMessageData() async {
-  // 读取你的JSON文件
+  // 读取你的JSON文件作为基础结构
   final jsonList = await JsonReader.readJsonList('assets/json/messages/list.json');
   
-  setState(() {
-    // 转成模型
-    _messageList = jsonList.map((json) => MessageItem.fromJson(json)).toList();
-  });
+  List<MessageItem> initialList = jsonList.map((json) => MessageItem.fromJson(json)).toList();
+
+  if (mounted) {
+    setState(() {
+      _messageList = initialList;
+    });
+  }
+
+  try {
+    String? itsid = await DataStorage.loadItsid();
+    if (itsid == null || itsid.isEmpty) return;
+
+    final url = Uri.parse(
+      'https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11817&itsid=$itsid',
+    );
+
+    print('获取消息列表URL: $url');
+
+    final response = await http.get(url);
+    print('获取消息列表数据: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (responseData['code'] == '0' && responseData['data'] is List) {
+        final List<dynamic> rawData = responseData['data'];
+
+        // 分类存储最新的通知，假设列表中排在前面的是最新的
+        Map<String, dynamic> latestMsgClass1 = {};
+        Map<String, dynamic> latestMsgClass2 = {};
+        Map<String, dynamic> latestMsgClass3 = {};
+        Map<String, dynamic> latestMsgClass4 = {};
+
+        for (var item in rawData) {
+          String classname = item['classname']?.toString() ?? '';
+          if (classname == '1' && latestMsgClass1.isEmpty) latestMsgClass1 = item;
+          if (classname == '2' && latestMsgClass2.isEmpty) latestMsgClass2 = item;
+          if (classname == '3' && latestMsgClass3.isEmpty) latestMsgClass3 = item;
+          if (classname == '4' && latestMsgClass4.isEmpty) latestMsgClass4 = item;
+        }
+
+        // 截取18个字
+        String formatText(String? text) {
+          if (text == null || text.isEmpty) return '';
+          if (text.length > 18) {
+            return '${text.substring(0, 18)}...';
+          }
+          return text;
+        }
+
+        List<MessageItem> updatedList = [];
+        for (var item in initialList) {
+          if (item.title == '系统维护公告' && latestMsgClass1.isNotEmpty) {
+            updatedList.add(item.copyWith(
+              content: formatText(latestMsgClass1['text']),
+              time: latestMsgClass1['time']?.toString() ?? item.time,
+              hasBadge: latestMsgClass1['isread']?.toString() == '0',
+            ));
+          } else if (item.title == '约球报名成功' && latestMsgClass2.isNotEmpty) {
+            updatedList.add(item.copyWith(
+              content: formatText(latestMsgClass2['text']),
+              time: latestMsgClass2['time']?.toString() ?? item.time,
+              hasBadge: latestMsgClass2['isread']?.toString() == '0',
+            ));
+          } else if (item.title == '新增互动提醒' && latestMsgClass3.isNotEmpty) {
+            updatedList.add(item.copyWith(
+              content: formatText(latestMsgClass3['text']),
+              time: latestMsgClass3['time']?.toString() ?? item.time,
+              hasBadge: latestMsgClass3['isread']?.toString() == '0',
+            ));
+          } else if (item.title == '客服反馈回复' && latestMsgClass4.isNotEmpty) {
+            updatedList.add(item.copyWith(
+              content: formatText(latestMsgClass4['text']),
+              time: latestMsgClass4['time']?.toString() ?? item.time,
+              hasBadge: latestMsgClass4['isread']?.toString() == '0',
+            ));
+          } else {
+            updatedList.add(item);
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _messageList = updatedList;
+          });
+        }
+      }
+    }
+  } catch (e) {
+    print('获取消息列表失败: $e');
+  }
 }
 
 
@@ -121,10 +159,7 @@ Future<void> _loadMessageData() async {
             const SizedBox(height: 15),
             // 搜索栏
             _buildSearchBar(),
-            const SizedBox(height: 24),
-            // 分类入口栏
-            _buildCategoryBar(),
-            // const SizedBox(height: 18),
+            const SizedBox(height: 12),
             // 消息列表
             _buildMessageList(),
             const SizedBox(height: 80), // 底部导航预留空间
@@ -161,67 +196,6 @@ Future<void> _loadMessageData() async {
 
 //========================================================================================
 
-  // 分类入口栏
-  Widget _buildCategoryBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: _categoryList.map((category) {
-        return _buildCategoryItem(category);
-      }).toList(),
-    );
-  }
-
-  // 单个分类入口项
-  Widget _buildCategoryItem(MessageCategory category) {
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: category.bgColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                category.icon,
-                size: 32,
-                color: category.iconColor,
-              ),
-            ),
-        // 小红点角标
-            if (category.hasBadge)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF3B30),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          category.title,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-//========================================================================================
-
   // 消息列表
   Widget _buildMessageList() {
     return ListView.separated(
@@ -237,12 +211,32 @@ Future<void> _loadMessageData() async {
 
   // 单个消息列表项
   Widget _buildMessageItem(MessageItem item) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (item.title == '新增互动提醒') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const InteractionNotificationsPage(),
+            ),
+          );
+        } else if (item.title == '约球状态通知') {
+          Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookingNotificationPage(),
+                    ),
+                  );
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // 左侧图标
           Stack(
             clipBehavior: Clip.none,
@@ -320,6 +314,7 @@ Future<void> _loadMessageData() async {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }

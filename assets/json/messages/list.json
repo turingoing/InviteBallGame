@@ -2,7 +2,7 @@
   {
     "icon": "check_circle",
     "bgColor": "FFE8E5FF",
-    "title": "约球报名成功",
+    "title": "约球状态通知",
     "content": "您的库诺克进阶赛报名已通过，请准时参加",
     "time": "10:30",
     "hasBadge": true

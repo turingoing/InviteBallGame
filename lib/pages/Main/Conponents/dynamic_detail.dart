@@ -120,10 +120,44 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11810&itsid=$itsid',
       );
 
+      String postText = widget.dynamicData.content;
+      if (postText.length > 15) {
+        postText = postText.substring(0, 15);
+      }
+
+      String imgName = '';
+      // 如果是视频，优先使用缩略图
+      if (widget.dynamicData.videoUrl != null && widget.dynamicData.videoUrl!.isNotEmpty) {
+        if (widget.dynamicData.thumbnailUrl != null && widget.dynamicData.thumbnailUrl!.isNotEmpty) {
+          final uri = Uri.tryParse(widget.dynamicData.thumbnailUrl!);
+          imgName = (uri != null && uri.pathSegments.isNotEmpty)
+              ? uri.pathSegments.last
+              : widget.dynamicData.thumbnailUrl!;
+        }
+      } else if (widget.dynamicData.imageUrls.isNotEmpty) {
+        // 提取文件名
+        final uri = Uri.tryParse(widget.dynamicData.imageUrls.first);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          imgName = uri.pathSegments.last;
+        } else {
+          imgName = widget.dynamicData.imageUrls.first;
+        }
+      }
+
+      final requestBody = {
+        'postid': widget.dynamicData.postid,
+        'imgname': imgName,
+        'posttext': postText,
+        'publisherid': widget.dynamicData.userid,
+      };
+      print('点赞上传URL: $url');
+      print('点赞上传itsid: $itsid');
+      print('点赞上传参数: ${jsonEncode(requestBody)}');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'postid': widget.dynamicData.postid}),
+        body: jsonEncode(requestBody),
       );
 
       print('点赞接口返回状态码: ${response.statusCode}');
@@ -154,10 +188,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11812&itsid=$itsid',
       );
 
+      String imgName = '';
+      // 如果是视频，优先使用缩略图
+      if (widget.dynamicData.videoUrl != null && widget.dynamicData.videoUrl!.isNotEmpty) {
+        if (widget.dynamicData.thumbnailUrl != null && widget.dynamicData.thumbnailUrl!.isNotEmpty) {
+          final uri = Uri.tryParse(widget.dynamicData.thumbnailUrl!);
+          imgName = (uri != null && uri.pathSegments.isNotEmpty)
+              ? uri.pathSegments.last
+              : widget.dynamicData.thumbnailUrl!;
+        }
+      } else if (widget.dynamicData.imageUrls.isNotEmpty) {
+        // 提取文件名
+        final uri = Uri.tryParse(widget.dynamicData.imageUrls.first);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          imgName = uri.pathSegments.last;
+        } else {
+          imgName = widget.dynamicData.imageUrls.first;
+        }
+      }
+
+      final body = {
+        'postid': widget.dynamicData.postid,
+        'imgname': imgName,
+        'publisherid': widget.dynamicData.userid,
+        'posttext': widget.dynamicData.content,
+      };
+
+      print('收藏接口URL: $url');
+      print('收藏接口参数: ${jsonEncode(body)}');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'postid': widget.dynamicData.postid}),
+        body: jsonEncode(body),
       );
 
       print('收藏接口返回状态码: ${response.statusCode}');
@@ -191,13 +254,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11811&itsid=$itsid',
       );
 
+      String imgName = '';
+      // 如果是视频，优先使用缩略图
+      if (widget.dynamicData.videoUrl != null && widget.dynamicData.videoUrl!.isNotEmpty) {
+        if (widget.dynamicData.thumbnailUrl != null && widget.dynamicData.thumbnailUrl!.isNotEmpty) {
+          final uri = Uri.tryParse(widget.dynamicData.thumbnailUrl!);
+          imgName = (uri != null && uri.pathSegments.isNotEmpty)
+              ? uri.pathSegments.last
+              : widget.dynamicData.thumbnailUrl!;
+        }
+      } else if (widget.dynamicData.imageUrls.isNotEmpty) {
+        // 提取文件名
+        final uri = Uri.tryParse(widget.dynamicData.imageUrls.first);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          imgName = uri.pathSegments.last;
+        } else {
+          imgName = widget.dynamicData.imageUrls.first;
+        }
+      }
+
+      final body = {
+        'postid': widget.dynamicData.postid,
+        'comment': commentText,
+        'imgname': imgName,
+        'publisherid': widget.dynamicData.userid,
+      };
+
+      print('发送评论接口URL: $url');
+      print('发送评论接口参数: ${jsonEncode(body)}');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'postid': widget.dynamicData.postid,
-          'comment': commentText,
-        }),
+        body: jsonEncode(body),
       );
 
       print('发送评论接口返回状态码: ${response.statusCode}');

@@ -109,6 +109,7 @@ class _MyDynamicPageState extends State<MyDynamicPage> {
               isOnline: true,
               createTime: data['create_time']?.toString() ?? '',
               postid: data['postid']?.toString() ?? '',
+              userid: data['userid']?.toString() ?? '',
             ));
           }
 

@@ -196,6 +196,7 @@ class _DynamicPageState extends State<DynamicPage> {
               isOnline: true, // 默认在线状态
               createTime: data['create_time']?.toString() ?? '', // 传递发布时间
               postid: data['postid']?.toString() ?? '', // 传递帖子ID
+              userid: data['userid']?.toString() ?? '', // 传递发布者ID
             );
             dynamicList.add(dynamicModel);
           }

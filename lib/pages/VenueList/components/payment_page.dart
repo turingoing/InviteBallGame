@@ -5,8 +5,15 @@ import 'package:flutter_application_1/utils/data_storage.dart';
 
 class PaymentPage extends StatefulWidget {
   final String inviteid;
+  final String location;
+  final String publisherid;
 
-  const PaymentPage({super.key, required this.inviteid});
+  const PaymentPage({
+    super.key,
+    required this.inviteid,
+    required this.location,
+    required this.publisherid,
+  });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -32,6 +39,8 @@ class _PaymentPageState extends State<PaymentPage> {
         request.headers['Content-Type'] = 'application/json';
         request.body = json.encode({
           'inviteid': widget.inviteid,
+          'location': widget.location,
+          'publisherid': widget.publisherid,
         });
         
         print('支付接口发送参数: ${request.body}');

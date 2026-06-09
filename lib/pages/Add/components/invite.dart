@@ -147,7 +147,11 @@ class _InviteFormState extends State<InviteForm> {
       final paymentResult = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PaymentPage(inviteid: inviteid.toString()),
+          builder: (context) => PaymentPage(
+            inviteid: inviteid.toString(),
+            location: _locationController.text,
+            publisherid: '', // 发布者在发布时自己就是 publisherid，后端可能不需要或者可以通过 itsid 获取。先传空或从 storage 取
+          ),
         ),
       );
 

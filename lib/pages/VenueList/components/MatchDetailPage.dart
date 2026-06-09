@@ -266,8 +266,8 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       print('请求已加入成员URL: $url');
 
       final response = await http.get(url);
+      print('已加入成员接口响应 (11810): ${response.body}');
       print('已加入成员响应状态码: ${response.statusCode}');
-      print('已加入成员响应内容: ${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('请求失败，状态码: ${response.statusCode}');
@@ -1114,6 +1114,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
         '11804',
         {
           'inviteid': widget.inviteid,
+          'location': _matchData?.location ?? '',
         },
       );
 

@@ -17,6 +17,24 @@ class MessageItem {
     required this.hasBadge,
   });
 
+  MessageItem copyWith({
+    IconData? icon,
+    Color? bgColor,
+    String? title,
+    String? content,
+    String? time,
+    bool? hasBadge,
+  }) {
+    return MessageItem(
+      icon: icon ?? this.icon,
+      bgColor: bgColor ?? this.bgColor,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      time: time ?? this.time,
+      hasBadge: hasBadge ?? this.hasBadge,
+    );
+  }
+
   // 关键：这里定义了 fromJson，你之前缺少这个！
   factory MessageItem.fromJson(Map<String, dynamic> json) {
     return MessageItem(

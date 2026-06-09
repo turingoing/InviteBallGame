@@ -149,6 +149,8 @@ class _MyPlayPageState extends State<MyPlayPage> {
       final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11812&itsid=$itsid');
       final response = await http.get(url);
 
+      print('我的加入列表接口响应 (11812): ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
@@ -418,7 +420,11 @@ class _ActivitySection extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PaymentPage(inviteid: activity.inviteid),
+                  builder: (context) => PaymentPage(
+                    inviteid: activity.inviteid,
+                    location: activity.location,
+                    publisherid: activity.userid, // 使用发布者的userid
+                  ),
                 ),
               ).then((_) {
                 // 支付页面返回后刷新数据

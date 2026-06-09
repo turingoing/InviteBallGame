@@ -194,7 +194,10 @@ class _MyPublishPageState extends State<MyPublishPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => InviteDetailPage(inviteId: activity.inviteid ?? ''),
+                                      builder: (context) => InviteDetailPage(
+                                        inviteId: activity.inviteid ?? '',
+                                        location: activity.location,
+                                      ),
                                     ),
                                   );
                                 },
