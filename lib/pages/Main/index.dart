@@ -145,52 +145,13 @@ class _MainTabPageState extends State<MainTabPage> {
               ),
             ),
               BottomNavigationBarItem(
-              icon: Stack(
-                children: [
-                  // const Icon(Icons.chat_bubble_outline,color: Colors.black,),
-                  Image.asset('assets/images/dt/Union(4).png',width: 20,height: 20,),
-                  Positioned(
-                    right: -1,
-                    top: -1,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        '99',
-                        style: TextStyle(color: Colors.white, fontSize: 6),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              activeIcon: Stack(
-                children: [
-                  Image.asset(
-                    'assets/images/dt/Union(4).png',
-                    width: 20,
-                    height: 20,
-                    color: const Color(0xFF0500FA), // 高亮颜色
-                    colorBlendMode: BlendMode.srcIn, // 保证只给图片上色
-                  ),
-                  Positioned(
-                    right: -1,
-                    top: -1,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        '99',
-                        style: TextStyle(color: Colors.white, fontSize: 6),
-                      ),
-                    ),
-                  ),
-                ],
+              icon: Image.asset('assets/images/dt/Union(4).png',width: 20,height: 20,),
+              activeIcon: Image.asset(
+                'assets/images/dt/Union(4).png',
+                width: 20,
+                height: 20,
+                color: const Color(0xFF0500FA), // 高亮颜色
+                colorBlendMode: BlendMode.srcIn, // 保证只给图片上色
               ),
               label: '消息',
             ),

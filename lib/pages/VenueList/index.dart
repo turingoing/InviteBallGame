@@ -209,9 +209,11 @@ class _BallReservationPageState extends State<BallReservationPage> {
             return idB.compareTo(idA);
           });
           
-          setState(() {
-            _reservationList = newList;
-          });
+          if (mounted) {
+            setState(() {
+              _reservationList = newList;
+            });
+          }
         } else {
           print('数据格式错误: ${response.body}');
         }
@@ -279,24 +281,28 @@ class _BallReservationPageState extends State<BallReservationPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),   //顶部
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(   
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 搜索栏
-            _buildSearchBar(),
-            const SizedBox(height: 6),
-            // 提醒卡片
-            _buildComplianceCard(),
-            const SizedBox(height: 6),
-            // 筛选栏
-            _buildFilterBar(),
-            const SizedBox(height: 6),
-            // 约球列表
-            _buildReservationList(),
-            const SizedBox(height: 80), // 底部导航预留空间
-          ],
+      body: RefreshIndicator(
+        onRefresh: _loadMessageData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(   
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 搜索栏
+              _buildSearchBar(),
+              const SizedBox(height: 6),
+              // 提醒卡片
+              _buildComplianceCard(),
+              const SizedBox(height: 6),
+              // 筛选栏
+              _buildFilterBar(),
+              const SizedBox(height: 6),
+              // 约球列表
+              _buildReservationList(),
+              const SizedBox(height: 80), // 底部导航预留空间
+            ],
+          ),
         ),
       ),
     );

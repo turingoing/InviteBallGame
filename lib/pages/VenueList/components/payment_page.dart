@@ -29,50 +29,21 @@ class _PaymentPageState extends State<PaymentPage> {
     });
 
     try {
-      String? itsid = await DataStorage.loadItsid();
-      if (itsid != null && itsid.isNotEmpty) {
-        final url = Uri.parse(
-            'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11807&itsid=$itsid');
-        print('支付请求URL: $url');
-        
-        var request = http.Request('POST', url);
-        request.headers['Content-Type'] = 'application/json';
-        request.body = json.encode({
-          'inviteid': widget.inviteid,
-          'location': widget.location,
-          'publisherid': widget.publisherid,
-        });
-        
-        print('支付接口发送参数: ${request.body}');
-        
-        var streamedResponse = await request.send();
-        var response = await http.Response.fromStream(streamedResponse);
-        
-        print('支付接口响应状态码: ${response.statusCode}');
-        print('支付接口响应内容: ${response.body}');
-
-        if (response.statusCode == 200) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('支付成功')),
-            );
-            // 支付成功后跳转回，带上成功标识
-            Navigator.of(context).pop(true);
-          }
-        } else {
-          // HTTP 状态码不是 200
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('支付失败：网络错误 ${response.statusCode}')),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      print('支付接口调用异常: $e');
+      // 模拟支付过程
+      await Future.delayed(const Duration(seconds: 2));
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('支付接口调用异常: $e')),
+          const SnackBar(content: Text('支付成功')),
+        );
+        // 支付成功后跳转回，带上成功标识
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      print('支付过程异常: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('支付异常: $e')),
         );
       }
     } finally {

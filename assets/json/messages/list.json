@@ -3,9 +3,9 @@
     "icon": "check_circle",
     "bgColor": "FFE8E5FF",
     "title": "约球状态通知",
-    "content": "您的库诺克进阶赛报名已通过，请准时参加",
-    "time": "10:30",
-    "hasBadge": true
+    "content": "",
+    "time": "",
+    "hasBadge": false
   },
   {
     "icon": "notifications_active",
@@ -19,9 +19,9 @@
     "icon": "thumb_up",
     "bgColor": "FFE5F0FF",
     "title": "新增互动提醒",
-    "content": "\"桌球达人\"赞了你的动态：今天手感不错！",
-    "time": "昨天",
-    "hasBadge": true
+    "content": "",
+    "time": "",
+    "hasBadge": false
   },
   {
     "icon": "chat",

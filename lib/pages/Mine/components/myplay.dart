@@ -416,8 +416,8 @@ class _ActivitySection extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           ElevatedButton(
-            onPressed: expired ? null : () {
-              Navigator.push(
+            onPressed: expired ? null : () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PaymentPage(
@@ -426,10 +426,43 @@ class _ActivitySection extends StatelessWidget {
                     publisherid: activity.userid, // 使用发布者的userid
                   ),
                 ),
-              ).then((_) {
-                // 支付页面返回后刷新数据
-                onRefresh();
-              });
+              );
+
+              if (result == true) {
+                // 支付成功后，调用 11807 接口
+                try {
+                  String? itsid = await DataStorage.loadItsid();
+                  if (itsid != null && itsid.isNotEmpty) {
+                    final url = Uri.parse(
+                        'https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11807&itsid=$itsid');
+                    
+                    final response = await http.post(
+                      url,
+                      headers: {'Content-Type': 'application/json'},
+                      body: json.encode({
+                        'inviteid': activity.inviteid,
+                        'location': activity.location,
+                        'publisherid': activity.userid,
+                      }),
+                    );
+
+                    print('加入确认接口 (11807) 响应: ${response.body}');
+                    
+                    if (response.statusCode == 200) {
+                      // 成功后刷新列表
+                      onRefresh();
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('加入确认失败: ${response.statusCode}')),
+                        );
+                      }
+                    }
+                  }
+                } catch (e) {
+                  print('调用 11807 接口异常: $e');
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: expired ? Colors.grey : const Color(0xFF2962FF),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import 'package:flutter_application_1/model/messages/list_model.dart'; // model路径
 import 'package:flutter_application_1/utils/json_reader.dart'; // 工具类路径
@@ -78,20 +79,73 @@ Future<void> _loadMessageData() async {
       if (responseData['code'] == '0' && responseData['data'] is List) {
         final List<dynamic> rawData = responseData['data'];
 
-        // 分类存储最新的通知，假设列表中排在前面的是最新的
         Map<String, dynamic> latestMsgClass1 = {};
         Map<String, dynamic> latestMsgClass2 = {};
         Map<String, dynamic> latestMsgClass3 = {};
         Map<String, dynamic> latestMsgClass4 = {};
+        
+        DateTime? latestTime1, latestTime2, latestTime3, latestTime4;
+
+        // 时间解析辅助函数
+        DateTime? parseTime(String? timeStr) {
+          if (timeStr == null || timeStr.isEmpty) return null;
+          String cleaned = timeStr.trim().replaceAll('/', '-');
+          
+          // 常见的日期时间格式列表
+          List<String> formats = [
+            'yyyy-M-d H:m:s',
+            'yyyy-M-d H:m',
+            'yyyy-M-d',
+            'M-d H:m:s',
+            'M-d H:m',
+            'M-d',
+          ];
+
+          for (String format in formats) {
+            try {
+              DateTime dt = DateFormat(format).parse(cleaned);
+              // 如果格式中没有年份（比如 M-d），则补上当前年份
+              if (!format.contains('yyyy')) {
+                dt = DateTime(DateTime.now().year, dt.month, dt.day, dt.hour, dt.minute, dt.second);
+              }
+              return dt;
+            } catch (_) {}
+          }
+          
+          // 最后的保底尝试
+          return DateTime.tryParse(cleaned);
+        }
 
         for (var item in rawData) {
           String classname = item['classname']?.toString() ?? '';
-          if (classname == '1' && latestMsgClass1.isEmpty) latestMsgClass1 = item;
-          if (classname == '2' && latestMsgClass2.isEmpty) latestMsgClass2 = item;
-          if (classname == '3' && latestMsgClass3.isEmpty) latestMsgClass3 = item;
-          if (classname == '4' && latestMsgClass4.isEmpty) latestMsgClass4 = item;
-        }
+          String itemTimeStr = item['time']?.toString() ?? '';
+          DateTime? itemTime = parseTime(itemTimeStr);
+          
+          if (itemTime == null) continue;
 
+          if (classname == '1') {
+            if (latestTime1 == null || itemTime.isAfter(latestTime1!)) {
+              latestMsgClass1 = item;
+              latestTime1 = itemTime;
+            }
+          } else if (classname == '2') {
+            if (latestTime2 == null || itemTime.isAfter(latestTime2!)) {
+              latestMsgClass2 = item;
+              latestTime2 = itemTime;
+            }
+          } else if (classname == '3') {
+            if (latestTime3 == null || itemTime.isAfter(latestTime3!)) {
+              latestMsgClass3 = item;
+              latestTime3 = itemTime;
+            }
+          } else if (classname == '4') {
+            if (latestTime4 == null || itemTime.isAfter(latestTime4!)) {
+              latestMsgClass4 = item;
+              latestTime4 = itemTime;
+            }
+          }
+        }
+        
         // 截取18个字
         String formatText(String? text) {
           if (text == null || text.isEmpty) return '';
@@ -101,36 +155,82 @@ Future<void> _loadMessageData() async {
           return text;
         }
 
-        List<MessageItem> updatedList = [];
+        List<Map<String, dynamic>> sortableList = [];
         for (var item in initialList) {
+          MessageItem updatedItem;
           if (item.title == '系统维护公告' && latestMsgClass1.isNotEmpty) {
-            updatedList.add(item.copyWith(
+            updatedItem = item.copyWith(
               content: formatText(latestMsgClass1['text']),
               time: latestMsgClass1['time']?.toString() ?? item.time,
               hasBadge: latestMsgClass1['isread']?.toString() == '0',
-            ));
-          } else if (item.title == '约球报名成功' && latestMsgClass2.isNotEmpty) {
-            updatedList.add(item.copyWith(
-              content: formatText(latestMsgClass2['text']),
+            );
+          } else if (item.title == '约球状态通知' && latestMsgClass2.isNotEmpty) {
+            String prefix = '';
+            String type = latestMsgClass2['type']?.toString() ?? '';
+            if (type == '1') {
+              prefix = '新成员加入待操作：';
+            } else if (type == '2') {
+              prefix = '已通过待付款：';
+            } else if (type == '6') {
+              prefix = '活动已取消：';
+            } else if (type == '8') {
+              prefix = '您的申请被拒绝：';
+            } else if (type == '9') {
+              prefix = '成员支付成功已加入：';
+            }
+            updatedItem = item.copyWith(
+              content: formatText('$prefix${latestMsgClass2['text'] ?? ''}'),
               time: latestMsgClass2['time']?.toString() ?? item.time,
               hasBadge: latestMsgClass2['isread']?.toString() == '0',
-            ));
+            );
           } else if (item.title == '新增互动提醒' && latestMsgClass3.isNotEmpty) {
-            updatedList.add(item.copyWith(
-              content: formatText(latestMsgClass3['text']),
+            String prefix = '';
+            String type = latestMsgClass3['type']?.toString() ?? '';
+            if (type == '4') {
+              prefix = '新点赞：';
+            } else if (type == '5') {
+              prefix = '新评论：';
+            } else if (type == '7') {
+              prefix = '新收藏：';
+            }
+            updatedItem = item.copyWith(
+              content: formatText('$prefix${latestMsgClass3['text'] ?? ''}'),
               time: latestMsgClass3['time']?.toString() ?? item.time,
               hasBadge: latestMsgClass3['isread']?.toString() == '0',
-            ));
+            );
           } else if (item.title == '客服反馈回复' && latestMsgClass4.isNotEmpty) {
-            updatedList.add(item.copyWith(
+            updatedItem = item.copyWith(
               content: formatText(latestMsgClass4['text']),
               time: latestMsgClass4['time']?.toString() ?? item.time,
               hasBadge: latestMsgClass4['isread']?.toString() == '0',
-            ));
+            );
           } else {
-            updatedList.add(item);
+            updatedItem = item;
           }
+          
+          sortableList.add({
+            'item': updatedItem,
+            'time': parseTime(updatedItem.time) ?? DateTime(0),
+          });
         }
+
+        // 格式化显示时间
+        String formatDisplayTime(DateTime dt) {
+          if (dt.year == 0 || dt.year < 2000) return ''; // 过滤无效或极旧时间
+          DateTime now = DateTime.now();
+          bool isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+          return isToday ? DateFormat('HH:mm').format(dt) : DateFormat('MM-dd').format(dt);
+        }
+
+        // 按时间倒序排序
+        sortableList.sort((a, b) => (b['time'] as DateTime).compareTo(a['time'] as DateTime));
+        
+        // 生成最终列表并应用时间显示格式
+        List<MessageItem> updatedList = sortableList.map((e) {
+          MessageItem item = e['item'] as MessageItem;
+          DateTime dt = e['time'] as DateTime;
+          return item.copyWith(time: formatDisplayTime(dt));
+        }).toList();
 
         if (mounted) {
           setState(() {

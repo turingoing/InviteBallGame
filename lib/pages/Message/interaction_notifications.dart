@@ -1,31 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_application_1/utils/data_storage.dart';
 
-class InteractionNotificationItem {
-  final String avatarUrl;
-  final String userName;
-  final String description;
+class InteractionNotificationModel {
+  final String infoid;
+  final String notified;
+  final String notifyingid;
+  final String postid;
+  final String type;
+  final String classname;
+  final String isread;
+  final String location;
+  final String text;
+  final String imgname;
+  final String typetext;
   final String time;
-  final String? imageUrl;
-  final InteractionType type;
-  final bool hasActionButtons;
+  final String headimg;
+  final String username;
 
-  InteractionNotificationItem({
-    required this.avatarUrl,
-    required this.userName,
-    required this.description,
-    required this.time,
-    this.imageUrl,
+  InteractionNotificationModel({
+    required this.infoid,
+    required this.notified,
+    required this.notifyingid,
+    required this.postid,
     required this.type,
-    this.hasActionButtons = false,
+    required this.classname,
+    required this.isread,
+    required this.location,
+    required this.text,
+    required this.imgname,
+    required this.typetext,
+    required this.time,
+    required this.headimg,
+    required this.username,
   });
-}
 
-enum InteractionType {
-  mention,
-  visit,
-  like,
-  comment,
-  follow,
+  factory InteractionNotificationModel.fromJson(Map<String, dynamic> json) {
+    return InteractionNotificationModel(
+      infoid: json['infoid']?.toString() ?? '',
+      notified: json['notified']?.toString() ?? '',
+      notifyingid: json['notifyingid']?.toString() ?? '',
+      postid: json['postid']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      classname: json['classname']?.toString() ?? '',
+      isread: json['isread']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      text: json['text']?.toString() ?? '',
+      imgname: json['imgname']?.toString() ?? '',
+      typetext: json['typetext']?.toString() ?? '',
+      time: json['time']?.toString() ?? '',
+      headimg: json['headimg']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+    );
+  }
 }
 
 class InteractionNotificationsPage extends StatefulWidget {
@@ -36,58 +64,133 @@ class InteractionNotificationsPage extends StatefulWidget {
 }
 
 class _InteractionNotificationsPageState extends State<InteractionNotificationsPage> {
-  final List<InteractionNotificationItem> _items = [
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 1.png',
-      userName: 'cn雨林（被限流版',
-      description: '提到了你: 快把这显眼包拉走#盗墓笔记cos #乐队私设 #oo...',
-      time: '5月29日',
-      imageUrl: 'assets/images/dt/Rectangle 28.png',
-      type: InteractionType.mention,
-    ),
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 2.png',
-      userName: '瑶瑶杏花村（努力更新中',
-      description: '提到了你: 瓶（左上1）@白菜不等于菜',
-      time: '',
-      imageUrl: 'assets/images/dt/Rectangle 30.png',
-      type: InteractionType.mention,
-      hasActionButtons: true,
-    ),
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 2.png',
-      userName: '瑶瑶杏花村（努力更新中',
-      description: '提到了你: 当团建当天花儿爷临时有事来不了 瞎子就变成...',
-      time: '5月23日',
-      imageUrl: 'assets/images/dt/Rectangle 34.png',
-      type: InteractionType.mention,
-    ),
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 2.png',
-      userName: '瑶瑶杏花村（努力更新中',
-      description: '提到了你: 云彩@ayayi',
-      time: '5月23日',
-      imageUrl: 'assets/images/dt/Rectangle 35.png',
-      type: InteractionType.mention,
-      hasActionButtons: true,
-    ),
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 6.png',
-      userName: '齐冬森',
-      description: '近期访问过你的主页',
-      time: '5月1日',
-      imageUrl: 'assets/images/dt/Rectangle 12.png',
-      type: InteractionType.visit,
-    ),
-    InteractionNotificationItem(
-      avatarUrl: 'assets/images/dt/Ellipse 12.png',
-      userName: '金鱼',
-      description: '赞了你的图文',
-      time: '2月27日',
-      imageUrl: 'assets/images/dt/Rectangle 8.png',
-      type: InteractionType.like,
-    ),
-  ];
+  List<InteractionNotificationModel> _items = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      String? itsid = await DataStorage.loadItsid();
+      if (itsid == null || itsid.isEmpty) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final url = Uri.parse('https://www.ruanzi.net/jy/go/we.aspx?ituid=118&itjid=04&itcid=11818&infotype=3&itsid=$itsid');
+      print('请求互动提醒 URL: $url');
+      final response = await http.get(url);
+      print('获取互动提醒数据: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['code'] == '0' && data['data'] is List) {
+          final List<dynamic> listData = data['data'];
+          setState(() {
+            _items = listData.map((e) => InteractionNotificationModel.fromJson(e)).toList();
+            // 按照时间从近到远排序
+            _items.sort((a, b) {
+              try {
+                DateTime parseTime(String t) {
+                  List<String> p = t.split(' ');
+                  if (p.length != 2) return DateTime.now();
+                  List<String> dp = p[0].split('/');
+                  if (dp.length != 3) return DateTime.now();
+                  String formatted = '${dp[0]}-${dp[1].padLeft(2, '0')}-${dp[2].padLeft(2, '0')} ${p[1]}';
+                  return DateTime.parse(formatted);
+                }
+                DateTime timeA = parseTime(a.time);
+                DateTime timeB = parseTime(b.time);
+                return timeB.compareTo(timeA);
+              } catch (e) {
+                return 0;
+              }
+            });
+            _isLoading = false;
+          });
+          
+          // 加载完成后调用额外的接口
+          _callPhoneApi(itsid);
+
+        } else {
+          setState(() => _isLoading = false);
+        }
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error fetching interaction notifications: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _callPhoneApi(String itsid) async {
+    try {
+      final phoneUrl = Uri.parse('https://www.ruanzi.net/jy/go/phone.aspx?ituid=118&mbid=11816&itsid=$itsid');
+      print('请求 phone 接口 URL: $phoneUrl');
+      final phoneResponse = await http.get(phoneUrl);
+      print('获取 phone 接口数据: ${phoneResponse.body}');
+    } catch (e) {
+      print('Error calling phone api: $e');
+    }
+  }
+
+  String formatTime(String timeStr) {
+    if (timeStr.isEmpty) return '';
+    try {
+      // Dart 的 DateTime.parse 无法直接解析 "2026/6/9 13:53:37" 这种格式 (缺少前导零)，需要进行处理
+      List<String> parts = timeStr.split(' ');
+      if (parts.length != 2) return timeStr;
+
+      List<String> dateParts = parts[0].split('/');
+      if (dateParts.length != 3) return timeStr;
+
+      String year = dateParts[0];
+      String month = dateParts[1].padLeft(2, '0');
+      String day = dateParts[2].padLeft(2, '0');
+
+      String formattedDateStr = '$year-$month-$day ${parts[1]}';
+      
+      DateTime parsedTime = DateTime.parse(formattedDateStr);
+      DateTime now = DateTime.now();
+      bool isToday = parsedTime.year == now.year && parsedTime.month == now.month && parsedTime.day == now.day;
+      if (isToday) {
+        return '${parsedTime.hour.toString().padLeft(2, '0')}:${parsedTime.minute.toString().padLeft(2, '0')}';
+      } else {
+        return '${parsedTime.month.toString().padLeft(2, '0')}-${parsedTime.day.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      print('Time parsing error: $e for $timeStr');
+      return timeStr;
+    }
+  }
+
+  String getContentByType(String type, String text) {
+    String truncatedText = text;
+    if (text.length > 10) {
+      truncatedText = '${text.substring(0, 10)}...';
+    }
+
+    switch (type) {
+      case '4':
+        return '赞了你的动态：$truncatedText';
+      case '5':
+        return '评论了你的动态：$truncatedText';
+      case '7':
+        return '收藏了你的动态：$truncatedText';
+      default:
+        return text;
+    }
+  }
+
+  String getAvatarUrl(String img) {
+    if (img.isEmpty) return '';
+    return 'https://www.ruanzi.net/jy/wxuser/118/images/singeravatar/$img';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,18 +213,22 @@ class _InteractionNotificationsPageState extends State<InteractionNotificationsP
         ),
         centerTitle: true,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        itemCount: _items.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 14),
-        itemBuilder: (context, index) {
-          return _buildNotificationItem(_items[index]);
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _items.isEmpty
+              ? const Center(child: Text('暂无互动消息', style: TextStyle(color: Colors.grey)))
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  itemCount: _items.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    return _buildNotificationItem(_items[index]);
+                  },
+                ),
     );
   }
 
-  Widget _buildNotificationItem(InteractionNotificationItem item) {
+  Widget _buildNotificationItem(InteractionNotificationModel item) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,7 +243,7 @@ class _InteractionNotificationsPageState extends State<InteractionNotificationsP
                 children: [
                   Flexible(
                     child: Text(
-                      item.userName,
+                      item.username,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -146,25 +253,9 @@ class _InteractionNotificationsPageState extends State<InteractionNotificationsP
                       maxLines: 1,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  if (item.type == InteractionType.like)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        '粉丝',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFFE67E22),
-                        ),
-                      ),
-                    ),
                   const SizedBox(width: 8),
                   Text(
-                    item.time,
+                    formatTime(item.time),
                     style: const TextStyle(
                       fontSize: 11,
                       color: Colors.grey,
@@ -174,7 +265,7 @@ class _InteractionNotificationsPageState extends State<InteractionNotificationsP
               ),
               const SizedBox(height: 4),
               Text(
-                item.description,
+                getContentByType(item.type, item.text),
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.black87,
@@ -183,123 +274,73 @@ class _InteractionNotificationsPageState extends State<InteractionNotificationsP
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (item.hasActionButtons) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.reply,
-                      size: 14,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '回复评论',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(width: 18),
-                    Icon(
-                      Icons.favorite_border,
-                      size: 14,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '赞',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
-        if (item.imageUrl != null) ...[
+        if (item.imgname.isNotEmpty) ...[
           const SizedBox(width: 8),
           Container(
             width: 50,
             height: 64,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
-              image: DecorationImage(
-                image: AssetImage(item.imageUrl!),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.grey[200],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.network(
+              getAvatarUrl(item.imgname),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.image, color: Colors.grey);
+              },
             ),
           ),
         ],
+        if (item.isread == '0')
+          Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(left: 8, top: 4),
+            decoration: const BoxDecoration(
+              color: Color(0xFF9E9E9E),
+              shape: BoxShape.circle,
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildLeadingIcon(InteractionNotificationItem item) {
-    Widget avatar = Container(
+  Widget _buildLeadingIcon(InteractionNotificationModel item) {
+    return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        image: DecorationImage(
-          image: AssetImage(item.avatarUrl),
-          fit: BoxFit.cover,
-        ),
+        color: Colors.grey[200],
       ),
-    );
-
-    IconData? badgeIcon;
-    Color badgeColor = const Color(0xFFE8E5FF);
-    Color iconColor = const Color(0xFF6A5AE0);
-
-    switch (item.type) {
-      case InteractionType.mention:
-        badgeIcon = Icons.alternate_email;
-        badgeColor = const Color(0xFFFFFBE0);
-        iconColor = const Color(0xFFFFB800);
-        break;
-      case InteractionType.visit:
-        badgeIcon = Icons.people;
-        badgeColor = const Color(0xFFE5F0FF);
-        iconColor = const Color(0xFF1E88E5);
-        break;
-      case InteractionType.like:
-        badgeIcon = Icons.favorite;
-        badgeColor = const Color(0xFFFFE5E5);
-        iconColor = const Color(0xFFFF3B30);
-        break;
-      case InteractionType.comment:
-      case InteractionType.follow:
-        badgeIcon = Icons.person_add;
-        break;
-    }
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        avatar,
-        Positioned(
-          right: -3,
-          bottom: -3,
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              color: badgeColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-            child: Icon(
-              badgeIcon,
-              size: 10,
-              color: iconColor,
-            ),
-          ),
-        ),
-      ],
+      clipBehavior: Clip.antiAlias,
+      child: item.headimg.isNotEmpty
+          ? Image.network(
+              getAvatarUrl(item.headimg),
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      color: Colors.grey,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.person, color: Colors.grey);
+              },
+            )
+          : const Icon(Icons.person, color: Colors.grey),
     );
   }
 }
