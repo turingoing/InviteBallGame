@@ -4,6 +4,12 @@ import 'package:flutter_application_1/pages/Mine/components/myplay.dart';
 import 'package:flutter_application_1/pages/Mine/components/mypublish.dart';
 import 'package:flutter_application_1/pages/Mine/components/my_dynamic.dart';
 import 'package:flutter_application_1/pages/Mine/components/edit_profile.dart';
+import 'package:flutter_application_1/pages/Mine/components/mine_verification_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/certification_center_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/bill_record_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/store_application_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/invite_gift_page.dart';
+import 'package:flutter_application_1/pages/Mine/components/qr_scanner_page.dart';
 import 'package:flutter_application_1/utils/data_storage.dart';
 import 'package:flutter_application_1/utils/location_service.dart';
 import 'package:flutter_application_1/pages/Auth/login.dart';
@@ -789,7 +795,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StoreApplicationPage(),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               elevation: 0,
@@ -848,6 +861,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     Navigator.push(context,MaterialPageRoute(builder: (context)=>MyPlayPage()));
                   }else if(item.title=="我的发布" ){
                     Navigator.push(context,MaterialPageRoute(builder: (context)=>MyPublishPage()));
+                  }else if(item.title=="账单记录"){
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>const BillRecordPage()));
+                  }else if(item.title=="扫一扫"){
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>const QRScannerPage()));
                   }
 
                 },
@@ -930,7 +947,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFCCCCCC)),
               ],
             ),
-            onTap: () {},
+            onTap: () {
+              if (item.title == '实名认证') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MineVerificationPage(),
+                  ),
+                );
+              } else if (item.title == '认证中心') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CertificationCenterPage(),
+                  ),
+                );
+              } else if (item.title == '邀请有礼') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InviteGiftPage(),
+                  ),
+                );
+              }
+            },
           );
         }).toList(),
       ),
